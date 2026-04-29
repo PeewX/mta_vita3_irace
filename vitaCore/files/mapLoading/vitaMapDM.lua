@@ -39,7 +39,7 @@ function dxCreateShader (filepath, priority, maxDistance, layered, elementTypes 
 end
 
 _outputChatBox = outputChatBox
-function outputChatBox( text, r, g, b, colorCoded)
+function outputChatBox(text, r, g, b, colorCoded)
 	return true
 	--[[if not text then text = "" end
 	if not r then r = 231 end
@@ -76,6 +76,7 @@ function engineImportTXD ( txd, model_id )
 	end
 	return _engineImportTXD ( txd, model_id )
 end
+
 _engineReplaceModel = engineReplaceModel
 function engineReplaceModel ( dff, model_id )
 	local hasFound = false
@@ -97,28 +98,18 @@ function addCommandHandler(cmd, func)
 end
 
 _createMarker = createMarker
-function createMarker(x,y,z,theType,size,r,g,b,a,visibleTo )
-	if not theType then theType = "checkpoint" end
-	if not size then size = 4.0 end
-	if not r then r = 0 end
-	if not b then b = 255 end
-	if not g then g = 0 end
-	if not a then a = 255 end
-	if not visibleTo then visibleTo = getRootElement() end
-	local marker = _createMarker(x,y,z,theType,size,r,g,b,a,visibleTo )
+function createMarker(x, y, z, ...)
+	if not x or not y or not z then return false end
+	local marker = _createMarker(x, y, z, ...)
 	gMapMarkers[#gMapMarkers+1] = marker
 	setElementDimension(marker, getElementData(getLocalPlayer(), "gameMode"))
 	return marker
 end
 
 _createObject = createObject
-function createObject(modelid, x,y,z,rx,ry,rz,isLowLOD )
-	if not rx then rx = 0 end
-	if not ry then ry = 0 end
-	if not rz then rz = 0 end
-	if not isLowLOD then isLowLOD = false end
-	if not visibleTo then visibleTo = getRootElement() end
-	local object = _createObject(modelid, x,y,z,rx,ry,rz,isLowLOD )
+function createObject(modelid, x, y, z, ...)
+	if not modelid or not x or not y or not z then return false end
+	local object = _createObject(modelid, x, y, z, ...)
 	gMapObjects[#gMapObjects+1] = object
 	setElementDimension(object, getElementData(getLocalPlayer(), "gameMode"))
 	return object
@@ -190,7 +181,7 @@ end
 
 _stopSound = stopSound
 function stopSound ( theSound )
-	for i,v in pairs(gMapSounds) do
+	for i, v in pairs(gMapSounds) do
 		if v == theSound then
 			v = false
 		end
@@ -203,11 +194,12 @@ addEvent("onClientResourceStopScript")
 addEvent("onClientPlayerSpawnScript")
 _addEventHandler = addEventHandler
 function addEventHandler(event, elem, fn, getPropagated)
+	if not event or not elem or not fn then return false end
 	if event == "onClientResourceStart" then event = "onClientResourceStartScript" end		
 	if event == "onClientPlayerSpawn" then event = "onClientPlayerSpawnScript" end		
 	if event == "onClientResourceStop" then event = "onClientResourceStopScript" end		
-	
-	getPropagated = getPropagated==nil and true or getPropagated
+
+	getPropagated = getPropagated == nil and true or getPropagated
 	local number = #gEventHandlers+1
 	gEventHandlers[number] = {}
 	gEventHandlers[number].event = event
