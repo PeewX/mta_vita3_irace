@@ -17,6 +17,7 @@ function Core:constructor()
     -- Instantiate classes (Create objects)
     PlayerManager:new()
     Migration:new()
+    TimeTrial:new()
 end
 
 function Core:destructor()

@@ -4,7 +4,7 @@
 -- Date: 30.04.2026 - Time: 23:23
 -- pewx.de // iRace-mta.de // mtasa.de
 --
-TimeTrial = inherit(Singelton)
+TimeTrial = inherit(Singleton)
 addRemoteEvents {"joinTT", "quitTT"}
 
 function TimeTrial:constructor()

@@ -51,6 +51,7 @@
 	<script src="server/html-server.lua" type="server" />
 	
 	<script src="server/core-server.lua" type="server" />
+    <script src="server/classes/Gamemodes/TimeTrial.lua" type="server" />
 	<script src="server/dd/dd-main.lua" type="server" />
 	<script src="server/dm/dm-main.lua" type="server" />
 	<script src="server/dm/dm-respawn.lua" type="server" />
