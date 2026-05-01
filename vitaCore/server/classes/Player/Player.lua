@@ -29,10 +29,13 @@ function Player:triggerEvent(ev, ...)
     triggerClientEvent(self, ev, self, ...)
 end
 
+function Player:callFunction(...)
+    callClientFunction(self, ...)
+end
+
 function Player:addArchivement(id)
     addPlayerArchivement(self, id)
 end
-
 
 function Player:hasRights(level)
     if ADMIN_LEVEL[self.m_Level] >= ADMIN_LEVEL[level] then

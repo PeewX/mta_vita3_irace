@@ -13,6 +13,8 @@
     <script src="shared/utils.lua" type = "shared" cache = "false"/>
     <script src="shared/async.lua" type="shared" cache = "false"/>
     <script src="shared/debug.lua" type = "shared" cache = "false"/>
+    
+    <script src="shared/constants/main.lua" type="shared" />
 
 	<script src="shared/utils-shared.lua" type="server" />
 	<script src="shared/utils-shared.lua" type="client" />

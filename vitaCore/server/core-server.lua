@@ -23,7 +23,8 @@ gRaceModes = {
 	--[3] = { name = "Race", img="files/selection/vitaRA.png", imghover = "files/selection/vitaRAhover.png", res = "vitaMapRA", joinfunc = "joinRA", quitfunc = "quitRA", loadfunc = "loadMapRA", element="elementRA", killfunc="killRAPlayer", maxplayers = 32, prefix="RACE", maps = {} },
 	--[4] = { name = "Minigames", img="files/selection/vitaFUN.png", imghover = "files/selection/vitaFUNhover.png", res = "vitaMapFUN", joinfunc = "joinFUN", quitfunc = "quitFUN", loadfunc = "loadModeFUN", element="elementFUN", killfunc="killFUNPlayer", maxplayers = 32, prefix="FUN", maps = {} },
 	[5] = { name = "Deathmatch", img="files/selection/vitaDM.png", imghover = "files/selection/vitaDMhover.png", res = "vitaMapDM", joinfunc = "joinDM", quitfunc = "quitDM", loadfunc = "loadMapDM", element="elementDM", killfunc="killDMPlayer", maxplayers = 32, prefix="DM", maps = {} },
-	--[6] = { name = "Monopoly", img="files/selection/vitaNone.png", imghover = "files/selection/vitaNonehover.png", res = "vitaMapMO", joinfunc = "joinMO", quitfunc = "quitMO", loadfunc = "loadMapMO", element="elementMO", killfunc="killMOPlayer", maxplayers = 32, prefix="MO", maps = {} }
+	--[6] = { name = "Monopoly", img="files/selection/vitaNone.png", imghover = "files/selection/vitaNonehover.png", res = "vitaMapMO", joinfunc = "joinMO", quitfunc = "quitMO", loadfunc = "loadMapMO", element="elementMO", killfunc="killMOPlayer", maxplayers = 32, prefix="MO", maps = {} },
+	[7] = { name = "TimeTrial", img="files/selection/vitaNone.png", imghover = "files/selection/vitaNonehover.png", res = "vitaMapTT", joinfunc = "joinTT", quitfunc = "quitTT", loadfunc = "loadMapTT", element="elementTT", killfunc="killTTPlayer", maxplayers = 32, prefix="TT", maps = {} },
 }
 
 donatorTeam = createTeam("Donator", 194, 103, 255)
