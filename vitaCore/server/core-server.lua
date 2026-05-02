@@ -445,11 +445,13 @@ addCommandHandler("refresh", refreshMapsCMD)
 
 function getRandomMap(gamemodeID)
 	if #gRaceModes[gamemodeID].maps == 0 then
+		outputChatBox("refresh")
 		refreshVitaMaps(gamemodeID)
 		return getRandomMap(gamemodeID)
 	end
 	
 	local number = math.random(1, #gRaceModes[gamemodeID].maps)
+	outputChatBox(number)
 	local name = gRaceModes[gamemodeID].maps[number].name
 	table.remove(gRaceModes[gamemodeID].maps, number)
 	

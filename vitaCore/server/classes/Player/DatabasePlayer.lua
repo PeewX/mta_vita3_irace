@@ -162,13 +162,13 @@ function DatabasePlayer:save()
 
 		--local dbString = sql:prepareString("UPDATE ??_player SET `level` = ?, skin = ?, points = ?, `rank` = ?, money = ?, wonmaps = ?, playedmaps = ?, ddmaps = ?, dmmaps = ?, shmaps = ?, ramaps = ?, ddwon = ?, dmwon = ?, shwon = ?, rawon = ?, betcounter = ?, jointimes = ?, vehcolor = ?, lightcolor = ?, timeonserver = ?, toptimes = ?, toptimesra = ?, km = ?, winningstreak = ?, memeActivated = ?, ddWinrate = ?, dmWinrate = ?, shWinrate = ?, raWinrate = ?, isDonator = ?, usedHorn = ?, wheels = ?, shooterkills = ?, ddkills = ?, donatordate = ?, backlights = ?, archivements = ? WHERE ID = ?", sql:getPrefix(),
         --    self:getData("Level"), self:getData("Skin"), self:getData("Points"), self:getData("Rank"), self:getData("Money"), self:getData("WonMaps"), self:getData("PlayedMaps"), self:getData("DDMaps"), self:getData("DMMaps"), self:getData("SHMaps"), self:getData("RAMaps"), self:getData("DDWon"), self:getData("DMWon"), self:getData("SHWon"), self:getData("RAWon"), self:getData("betCounter"), self:getData("jointimes"), mysqlColor, mysqlLightcolor, self:getData("TimeOnServer"), self:getData("TopTimes"), self:getData("TopTimesRA"), self:getData("KM"), self:getData("WinningStreak"), self:getData("memeActivated"), math.round(self:getData("DDWon")/self:getData("DDMaps")*100,2), math.round(self:getData("DMWon")/self:getData("DMMaps")*100,2), math.round(self:getData("SHWon")/self:getData("SHMaps")*100,2), math.round(self:getData("RAWon")/self:getData("RAMaps")*100,2), isDonator, self:getData("usedHorn"), self:getData("Wheels"), self:getData("shooterkills"),	self:getData("ddkills"), self:getData("donatordate"), self:getData("Backlights"), archivements_save, self.m_ID)
-	
+
 		--outputServerLog(dbString)
 		--outputConsole(dbString)
-			
+
         sql:queryExec("UPDATE ??_player SET `level` = ?, skin = ?, points = ?, `rank` = ?, money = ?, wonmaps = ?, playedmaps = ?, ddmaps = ?, dmmaps = ?, shmaps = ?, ramaps = ?, ddwon = ?, dmwon = ?, shwon = ?, rawon = ?, betcounter = ?, jointimes = ?, vehcolor = ?, lightcolor = ?, timeonserver = ?, toptimes = ?, toptimesra = ?, km = ?, winningstreak = ?, memeActivated = ?, ddWinrate = ?, dmWinrate = ?, shWinrate = ?, raWinrate = ?, isDonator = ?, usedHorn = ?, wheels = ?, shooterkills = ?, ddkills = ?, donatordate = ?, backlights = ?, archivements = ? WHERE ID = ?", sql:getPrefix(),
             self:getData("Level"), self:getData("Skin"), self:getData("Points"), self:getData("Rank"), self:getData("Money"), self:getData("WonMaps"), self:getData("PlayedMaps"), self:getData("DDMaps"), self:getData("DMMaps"), self:getData("SHMaps"), self:getData("RAMaps"), self:getData("DDWon"), self:getData("DMWon"), self:getData("SHWon"), self:getData("RAWon"), self:getData("betCounter"), self:getData("jointimes"), mysqlColor, mysqlLightcolor, self:getData("TimeOnServer"), self:getData("TopTimes"), self:getData("TopTimesRA"), self:getData("KM"), self:getData("WinningStreak"), self:getData("memeActivated"), math.round(self:getData("DDWon")/self:getData("DDMaps")*100,2), math.round(self:getData("DMWon")/self:getData("DMMaps")*100,2), math.round(self:getData("SHWon")/self:getData("SHMaps")*100,2), math.round(self:getData("RAWon")/self:getData("RAMaps")*100,2), isDonator, self:getData("usedHorn"), self:getData("Wheels"), self:getData("shooterkills"),	self:getData("ddkills"), self:getData("donatordate"), self:getData("Backlights"), archivements_save, self.m_ID)
-			
+
 		sql:queryExec("UPDATE ??_account SET `DisplayName` = ? WHERE `ID` = ?", sql:getPrefix(), self:getName(), self.m_ID)
     end
 end
@@ -185,3 +185,4 @@ end
 -- Short getters TODO
 function DatabasePlayer:getID()         return self.m_ID        end
 function DatabasePlayer:isLoggedIn()    return self.m_ID ~= -1  end
+function DatabasePlayer:getAccount()    return self.m_Account end
