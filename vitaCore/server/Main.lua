@@ -3,7 +3,7 @@ local Main = {}
 function Main.resourceStart()
 	-- Instantiate Core
     core = Core:new()
-    math.randomseed(getRealTime().timestmap)
+    math.randomseed(getRealTime().timestamp)
 end
 addEventHandler("onResourceStart", resourceRoot, Main.resourceStart, true, "high+99999")
 

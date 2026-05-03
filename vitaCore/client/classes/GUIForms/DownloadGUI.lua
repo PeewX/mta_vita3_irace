@@ -66,8 +66,8 @@ function DownloadGUI:onComplete()
                 end
             end
 
-            lgi.m_Editbox_Username:setText(username)
-            lgi.m_Editbox_Password:setText(pwhash)
+            lgi.m_Login_Username:setText(username)
+            lgi.m_Login_Password:setText(pwhash)
             lgi.usePasswordHash = pwhash
             lgi.useCustomAvatar = avatar
             lgi:updateRenderTarget()

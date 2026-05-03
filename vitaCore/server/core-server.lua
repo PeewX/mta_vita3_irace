@@ -449,11 +449,11 @@ function getRandomMap(gamemodeID)
 		refreshVitaMaps(gamemodeID)
 		return getRandomMap(gamemodeID)
 	end
-	
+
 	local number = math.random(1, #gRaceModes[gamemodeID].maps)
 	local name = gRaceModes[gamemodeID].maps[number].name
 	table.remove(gRaceModes[gamemodeID].maps, number)
-	
+
 	return name
 end
 

@@ -1,5 +1,6 @@
 .idea/
-vitaCore/server/constants/main.lua
+.vscode/
 
+vitaCore/server/constants/main.lua
 vitaCore/logs/
 vitaCore/ir.data
