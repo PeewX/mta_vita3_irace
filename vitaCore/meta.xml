@@ -30,6 +30,7 @@
     <script src="server/classes/Storage/iConnect/serialize.lua" type="server"/>
 
     <script src="server/classes/Core.lua" type="server" />
+    <script src="server/classes/RankManager.lua" type="server" />
     <script src="server/classes/DatabaseMap.lua" type="server" />
     <script src="server/classes/Migration.lua" type="server"/>
     <script src="server/classes/Provider.lua" type="server"/>

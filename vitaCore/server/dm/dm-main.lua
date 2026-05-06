@@ -847,7 +847,7 @@ function setUpDMPlayer(player)
 	
 	setElementData(player, "loadMapDM", false)
 	triggerLatentClientEvent ( player, "loadMapDM", 50000, false,  getRootElement(), gMetaDM )
-	callClientFunction( player, "updatePlayerRanks")
+	RankManager:getSingleton():updateAndNotify()
 	
 	if gIsDMRunning ~= false then setElementData( player, "ghostmod", false ) return end
 	setElementData( player, "ghostmod", true )

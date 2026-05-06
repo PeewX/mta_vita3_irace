@@ -118,16 +118,16 @@ function DatabasePlayer:load()
     sendModesToClient(self)
     addPlayerArchivement(self, 1)
 
-    local accElements = getElementsByType("userAccount")
-    for _, accElement in ipairs(accElements) do
-        if getElementData(accElement, "AccountName") == getElementData(self, "AccountName") then
-            callClientFunction(getRootElement(), "updatePlayerRanks")
-            setElementData(accElement, "PlayerName", _getPlayerName(self))
-            setElementData(accElement, "Level", getElementData(self, "Level"))
-            setElementData(self, "accElement", accElement)
-            return
+    for _, accElement in ipairs(getElementsByType("userAccount")) do
+        if accElement:getData("AccountName") == self:getData("AccountName") then
+            accElement:setData("PlayerName", _getPlayerName(self))
+            accElement:setData("Level",      self:getData("Level"))
+            self:setData("accElement", accElement)
+            break
         end
     end
+
+    RankManager:getSingleton():onPlayerLogin(self)
 end
 
 function DatabasePlayer:save()

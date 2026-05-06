@@ -15,6 +15,7 @@ function Core:constructor()
     self:generatePackage()
 
     -- Instantiate classes (Create objects)
+    RankManager:new()
     PlayerManager:new()
     Migration:new()
 end

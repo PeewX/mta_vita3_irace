@@ -852,7 +852,7 @@ function setUpSHPlayer(player)
 	end
 	setElementData(player, "loadMapSH", false)
 	triggerLatentClientEvent ( player, "loadMapSH", 50000, false,  getRootElement(), gMetaSH )
-	callClientFunction( player, "updatePlayerRanks")
+	RankManager:getSingleton():updateAndNotify()
 	
 	if gIsSHRunning ~= false then return end
 	

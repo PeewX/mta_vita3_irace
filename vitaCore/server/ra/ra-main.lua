@@ -779,7 +779,7 @@ function setUpRAPlayer(player)
 	local timer = setTimer(function(player)
 		if isElement(player) then
 			triggerLatentClientEvent ( player, "loadMapRA", 50000, false,  getRootElement(), gMetaRA )
-			callClientFunction( player, "updatePlayerRanks")
+			RankManager:getSingleton():updateAndNotify()
 			if getElementData(player, "loadMapRA") == true then
 				if isTimer(getElementData(player, "loadMapRATimer")) then
 					killTimer(getElementData(player, "loadMapRATimer"))

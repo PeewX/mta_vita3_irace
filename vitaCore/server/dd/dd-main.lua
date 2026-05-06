@@ -879,7 +879,7 @@ function setUpDDPlayer(player)
 	
 	setElementData(player, "loadMapDD", false)
 	triggerLatentClientEvent ( player, "loadMapDD", 50000, false,  getRootElement(), gMetaDD )
-	callClientFunction( player, "updatePlayerRanks")
+	RankManager:getSingleton():updateAndNotify()
 	if gMapMusicDD == true then
 		--triggerClientEvent ( player, "onMapSoundReceive", player,"http://5.230.227.95:22005/vitaStream/dd.mp3")
 	end

@@ -123,53 +123,6 @@ function notInitialisedRender()
 	dxDrawImage ( screenWidth/2-256, screenHeight/2-256, 512, 512, "files/loading.png" )
 end
 
-playerRankTable = {}
-
-
-function updatePlayerRanks()
-	playerRankTable = nil
-	playerRankTable = {}
-	
-	local number = 1
-	for i, accElement in ipairs(getElementsByType("userAccount")) do
-		playerRankTable[number] = {}
-		playerRankTable[number].name = getElementData(accElement, "AccountName")
-		playerRankTable[number].rank = tonumber(getElementData(accElement, "Points"))
-		if playerRankTable[number].rank == false or playerRankTable[number].rank == nil then
-			playerRankTable[number].rank = 0
-		end
-		number = number + 1
-	end
-	table.sort(playerRankTable, 
-		function(a, b)
-			return a.rank > b.rank
-		end
-	)
-	for id, player in ipairs(getElementsByType("player")) do
-		local scoreboardRank = getElementData(player, "rankScoreboard")
-		setElementData(player, "rankScoreboard", "-", false)
-		for i, accElement in ipairs(playerRankTable) do
-			if accElement.name == getElementData(player, "AccountName") then
-				if player == getLocalPlayer() then
-					if tostring(scoreboardRank) ~= tostring(i) then
-						if scoreboardRank ~= "-" and tonumber(scoreboardRank) ~= nil then
-							if tonumber(scoreboardRank) > i then
-								addNotification(3, 120, 100, 18, "Rank Up! New rank: "..tostring(i))
-							else
-								addNotification(3, 120, 100, 18, "Lost a rank. New rank: "..tostring(i))
-							end
-						end
-					end
-					setElementData(player, "rankScoreboard", tostring(i), false)
-				else
-					setElementData(player, "rankScoreboard", tostring(i), false)
-				end
-			end
-		end		
-	end
-end
-
-
 addEventHandler("onClientVehicleEnter", getRootElement(),
     function(thePlayer, seat)
         if seat == 0 then
