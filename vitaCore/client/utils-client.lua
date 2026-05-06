@@ -172,9 +172,9 @@ function resAdjust(num)
 end
 
 function checkVehicleIsHelicopter(veh)
-	local vehID = getElementModel(veh)
+	local vehID = veh.model
 	if vehID == 417 or vehID == 425 or vehID == 447 or vehID == 465 or vehID == 469 or vehID == 487 or vehID == 488 or vehID == 497 or vehID == 501 or vehID == 548 or vehID == 563 then
-		setHelicopterRotorSpeed (veh, 0.2)
+		veh:setVehicleRotorSpeed(0.2)
 	end
 end
 
