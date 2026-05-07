@@ -456,10 +456,7 @@ function loadMap(meta2, rsnm)
 				i = i + 1
 			end
 		end
-	end
-	
-	--Download files
-	if metaXML then
+
 		local i = 0
 		while true do 	
 			local filenode = xmlFindChild ( metaXML, "file", i)
@@ -482,6 +479,7 @@ function loadMap(meta2, rsnm)
 			end
 			i = i + 1
 		end
+		xmlUnloadFile(metaXML)
 	end
 	scriptStartTimer = _setTimer(checkScriptStart, 100, 0)
 end
