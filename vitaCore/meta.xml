@@ -32,9 +32,13 @@
     <script src="server/classes/Storage/iConnect/serialize.lua" type="server"/>
 
     <script src="server/classes/Core.lua" type="server" />
+    <script src="server/classes/MapManager.lua" type="server" />
     <script src="server/classes/DatabaseMap.lua" type="server" />
+    <script src="server/classes/Map.lua" type="server" />
     <script src="server/classes/Migration.lua" type="server"/>
     <script src="server/classes/Provider.lua" type="server"/>
+
+    <script src="server/classes/Gamemodes/TimeTrial.lua" type="server" />
 
     <!-- Player -->
     <script src="server/classes/Player/Account.lua" type="server"/>
@@ -51,7 +55,6 @@
 	<script src="server/html-server.lua" type="server" />
 	
 	<script src="server/core-server.lua" type="server" />
-    <script src="server/classes/Gamemodes/TimeTrial.lua" type="server" />
 	<script src="server/dd/dd-main.lua" type="server" />
 	<script src="server/dm/dm-main.lua" type="server" />
 	<script src="server/dm/dm-respawn.lua" type="server" />
@@ -104,6 +107,7 @@
     <script src = "client/classes/Core.lua" type = "client" cache = "false"/>
     <script src = "client/classes/LocalPlayer.lua" type = "client" cache = "false"/>
     <script src = "client/classes/Provider.lua" type = "client" cache = "false"/>
+    <script src = "client/classes/MapManager.lua" type = "client" cache = "false"/>
     <script src = "client/classes/AntiBounce.lua" type = "client" cache = "false"/>
     <script src = "client/classes/Sounds.lua" type = "client" cache = "false"/>
     <script src = "client/classes/SpawnPosition.lua" type = "client" cache = "false"/>

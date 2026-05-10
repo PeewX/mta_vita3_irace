@@ -17,6 +17,7 @@ function callServerFunction(funcname, ...)
     if (arg[1]) then
         for key, value in next, arg do arg[key] = tonumber(value) or value end
     end
+	if not _G[funcname] then outputDebug(debug.traceback()) return end
     loadstring("return "..funcname)()(unpack(arg))
 end
 

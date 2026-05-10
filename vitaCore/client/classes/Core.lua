@@ -11,13 +11,13 @@ function Core:constructor()
     Provider:new()
     LoginBackground:new()
     DownloadGUI:new()
+    MapManager:new()
 
     Provider:getSingleton():requestFile("ir.data", bind(DownloadGUI.onComplete, DownloadGUI:getSingleton()), bind(DownloadGUI.onProgress, DownloadGUI:getSingleton()))
     setAmbientSoundEnabled("gunfire", false)
 end
 
 function Core:destructor()
-
 end
 
 function Core:ready()

@@ -1,0 +1,9 @@
+<meta>
+    <info author="PewX" type="script" name="vitaWrapper" />
+    <min_mta_version client="1.5.7" server="1.5.5-9.14060"/>
+    <oop>true</oop>
+
+    <script src="client.lua" type="client" cache="false"/>
+
+    <export function="execMapScript" type="client"/>
+</meta>

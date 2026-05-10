@@ -26,7 +26,15 @@ function Player:destructor()
 end
 
 function Player:triggerEvent(ev, ...)
-    triggerClientEvent(self, ev, self, ...)
+	if self and isElement(self) then
+		triggerClientEvent(self, ev, self, ...)
+	end
+end
+
+function Player:triggerLatentEvent(ev, ...)
+	if self and isElement(self) then
+		triggerLatentClientEvent(self, ev, self, ...)
+	end
 end
 
 function Player:callFunction(...)
