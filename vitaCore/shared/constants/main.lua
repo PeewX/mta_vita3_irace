@@ -7,3 +7,14 @@ GAMEMODES = {
     MONOPOLY = 6,   -- Monopoly (disabled)
     TT = 7,         -- TimeTrial
 }
+
+PICKUP_MODELS = {
+    ["nitro"] = 2221,
+    ["repair"] = 2222,
+    ["vehiclechange"] = 2223
+}
+
+VEHICLES = {
+    HUNTER = 425,
+    INFERNUS = 411
+}

@@ -105,36 +105,7 @@ function MapManager:_loadMapElements(ct)
     end
 
     for _, v in ipairs(ct["Racepickup"] or {}) do
-        --table.insert(self.ContentTable["Racepickup"], {attributes["type"], attributes["vehicle"], attributes["posX"], attributes["posY"], attributes["posZ"], attributes["rotX"], attributes["rotY"], attributes["rotZ"]})
-        --table.insert(self.RacePickups, new(CRacePickup, v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]))
-        local pickup = createElement("racePickup")
-        setElementData(pickup, "mode", "DM")
-        local pickupType = v[1]
-        local posX, posY, posZ = tonumber(v[3]), tonumber(v[4]), tonumber(v[5])
-        local object = false
-        if pickupType == "vehiclechange" then
-            pickupType = "vehicle"
-            object = createObject(2223, posX, posY, posZ, 0, 0, 0)
-            local vehicle = tonumber(v[2])
-            setElementData(pickup, "vehicle", vehicle)
-        elseif pickupType == "nitro" then
-            object = createObject(2221, posX, posY, posZ, 0, 0, 0)
-        elseif pickupType == "repair" then
-            object = createObject(2222, posX, posY, posZ, 0, 0, 0)
-        end
-        
-        if object then
-            setElementData(pickup, "type", pickupType)
-
-            setElementDimension(object, getElementData(getLocalPlayer(), "gameMode"))
-            setElementData(pickup, "object", object)
-            setElementData(pickup, "id", i2)
-
-            local col = createColSphere ( posX, posY, posZ, 3.5 )
-            setElementData(pickup, "col", col)
-            setElementData(col, "pickup", pickup)
-            setElementDimension(col, getElementData(getLocalPlayer(), "gameMode"))
-        end
+        RacePickup:new(v[1], v[2], Vector3(v[3], v[4], v[5]))
     end
 
     local s = ct["Settings"]

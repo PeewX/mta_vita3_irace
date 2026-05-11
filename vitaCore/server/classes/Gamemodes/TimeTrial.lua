@@ -144,6 +144,7 @@ end
 -- ==================== MAP LOADING ====================
 
 function TimeTrial:_loadMap(mapname)
+    outputServerLog("Loading map: " .. mapname)
     self.m_Element:setData("map",     "none")
     self.m_Element:setData("mapname", "loading...")
 
@@ -209,7 +210,7 @@ function TimeTrial:_unloadMap()
 
     for player in pairs(self.m_Players) do
         player:setData("state", "dead")
-        player:triggerEvent("stopMapTT", getRootElement())
+        player:triggerEvent("stopMap")
         callClientFunction(player, "hideHurry")
     end
 end

@@ -213,7 +213,7 @@ function onClientRender()
 	g_dxGUI.money:text("#d6db91Money: #FFFFFF"..tostring(getPlayerMoney()).." Vero")
 
 	local angle = math.fmod((getTickCount() - g_PickupStartTick) * 360 / 2000, 360)
-	for i,v in pairs(getElementsByType ( "racePickup" )) do
+	for _, v in pairs(getElementsByType ( "racePickup" )) do
 		if getElementData(v, "object") then
 			setElementRotation(getElementData(v, "object"), 0, 0, angle)
 			if getElementData(v, "type") == "vehicle" then

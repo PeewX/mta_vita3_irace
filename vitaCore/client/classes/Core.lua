@@ -15,6 +15,7 @@ function Core:constructor()
 
     Provider:getSingleton():requestFile("ir.data", bind(DownloadGUI.onComplete, DownloadGUI:getSingleton()), bind(DownloadGUI.onProgress, DownloadGUI:getSingleton()))
     setAmbientSoundEnabled("gunfire", false)
+    setDevelopmentMode(true)
 end
 
 function Core:destructor()
