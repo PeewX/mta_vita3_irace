@@ -112,7 +112,7 @@ function MapParser:constructor(mapResource)
     self.m_Settings.Waveheight = tonumber(get(("#%s.waveheight"):format(self.m_ResourceName))) or 0
 
     if #self.m_Files > 0 then
-        self.m_Package = (":vitaWrapper/packages/%s.data"):format(self.m_ResourceName)
+        self.m_Package = (":vitaWrapper/_mapPackages/%s.data"):format(sha256(self.m_ResourceName))
         outputServerLog("[MapParser] Files for package: " .. tostring(#self.m_Files))
         Package.save(self.m_Package, self.m_Files, true)
         Provider:getSingleton():offerFile(self.m_Package)
