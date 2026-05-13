@@ -31,9 +31,10 @@ function Player:triggerEvent(ev, ...)
 	end
 end
 
+local DOWNLOAD_SPEED = 4 * 1024 * 1024 -- 4MiB/s
 function Player:triggerLatentEvent(ev, ...)
 	if self and isElement(self) then
-		triggerLatentClientEvent(self, ev, self, ...)
+		triggerLatentClientEvent(self, ev, DOWNLOAD_SPEED, false, self, ...)
 	end
 end
 
