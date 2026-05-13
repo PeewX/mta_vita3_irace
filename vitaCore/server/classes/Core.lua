@@ -18,12 +18,15 @@ function Core:constructor()
     PlayerManager:new()
     Migration:new()
     TimeTrial:new()
+
+    Resource.getFromName("vitaWrapper"):start()
 end
 
 function Core:destructor()
     delete(PlayerManager:getSingleton())
-
     delete(sql)
+
+    Resource.getFromName("vitaWrapper"):stop()
 end
 
 function Core:loadAccountElements()
