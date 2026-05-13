@@ -4,13 +4,10 @@
 -- Date: 10.05.2026 - Time: 21:05
 -- pewx.de // iRace-mta.de // mtasa.de
 --
-
 MapManager = inherit(Singleton)
 addRemoteEvents{"loadMap", "stopMap"}
 
 function MapManager:constructor()
-    self.m_ContentTable = nil
-    self.m_PackageName  = nil
     self.m_Objects      = {}
     self.m_Markers      = {}
     self.m_Vehicles     = {}
@@ -22,26 +19,32 @@ function MapManager:constructor()
     addEventHandler("stopMap", root, bind(self.onStopMap, self))
 end
 
-function MapManager:onLoadMap(contentTable, packageName)
+function MapManager:onLoadMap(mapData, mapSettings, mapScript, packageName, ts)
+    local tts = getTimestamp()
     self:unloadMap()
 
-    outputDebugString("Received Map")
+    outputDebugString(("Received Map in %d ms"):format(tts - ts))
 
-    self.m_ContentTable = contentTable
-    self.m_PackageName  = packageName
+    self.m_MapData = mapData
+    self.m_Settings = mapSettings
+    self.m_Script = mapScript
+    self.m_Package  = packageName
 
-    self:_loadMapElements(contentTable)
+    self:_loadMapElements()
 
-    local script = contentTable["ClientScript"]
-    if script and script ~= "" and exports.vitaWrapper and exports.vitaWrapper.execMapScript then
-        exports.vitaWrapper:execMapScript(script)
+    if self.m_Script and self.m_Script ~= "" and exports.vitaWrapper and exports.vitaWrapper.execMapScript then
+        exports.vitaWrapper:execMapScript(self.m_Script)
     end
 
-    if packageName then
-        Provider:getSingleton():requestFile(packageName, bind(self._onPackageReady, self), function() end)
+    if self.m_Package then
+        outputDebugString("Request Package " .. self.m_Package)
+        Provider:getSingleton():requestFile(self.m_Package, bind(self._onPackageReady, self), function() end)
     else
+        outputDebugString("No files requested")
         self:_notifyReady()
     end
+
+    outputDebugString(("Client loaded Map in %d ms"):format(getTimestamp() - tts))
 end
 
 function MapManager:onStopMap()
@@ -49,66 +52,63 @@ function MapManager:onStopMap()
 end
 
 function MapManager:_onPackageReady()
+    outputDebugString("Request ready")
+    Package.load(self.m_Package, ":vitaWrapper")
     self:_notifyReady()
 end
 
 function MapManager:_notifyReady()
-    triggerServerEvent("downloadMapFinished", root, localPlayer)
+    triggerServerEvent("downloadMapFinished", localPlayer)
 end
 
-function MapManager:_loadMapElements(ct)
+function MapManager:_loadMapElements()
     local dim = localPlayer:getDimension()
 
-    for _, v in ipairs(ct["Object"] or {}) do
-        --{attributes["model"], attributes["posX"], attributes["posY"], attributes["posZ"], attributes["rotX"], attributes["rotY"], attributes["rotZ"], int, col, a, scale}
-        local obj = createObject(tonumber(v[1]), tonumber(v[2]), tonumber(v[3]), tonumber(v[4]), tonumber(v[5]), tonumber(v[6]), tonumber(v[7]))
+    for _, v in pairs(self.m_MapData["object"] or {}) do
+        local obj = createObject(v.model, v.x, v.y, v.z, v.rx, v.ry, v.rz)
         if obj then
-            local doublesided = v[9]
-            if v[8]  then obj:setInterior(tonumber(v[8])) end
-            if v[10] then obj:setAlpha(tonumber(v[10])) end
-            if v[11] then obj:setScale(tonumber(v[11])) end
-            if v[12] then obj:setDoubleSided(v[12] == "true") end
-
-            obj:setCollisionsEnabled(v[9] ~= "false")
+            obj:setInterior(v.interior or 0)
+            obj:setAlpha(v.alpha or 255)
+            obj:setScale(v.scale or 1)
+            obj:setDoubleSided(v.doublesided)
+            obj:setCollisionsEnabled(v.collisions ~= "false")
             obj:setDimension(dim)
             table.insert(self.m_Objects, obj)
         end
     end
 
-    for _, v in ipairs(ct["Marker"] or {}) do
-        local r, g, b, a = getColorFromString(v[6])
-        local marker = Marker(tonumber(v[1]), tonumber(v[2]), tonumber(v[3]), v[4], tonumber(v[5]), r or 255, g or 255, b or 255, a or 255)
+    for _, v in pairs(self.m_MapData["marker"] or {}) do
+        local marker = Marker(v.x, v.y, v.z, v.markertype, v.size, getColorFromString(v.color))
         if marker then
-            if v[7] then marker:setInterior(tonumber(v[7])) end
+            marker:setInterior(v.interior or 0)
             marker:setDimension(dim)
             table.insert(self.m_Markers, marker)
         end
     end
 
-    for _, v in ipairs(ct["Vehicle"] or {}) do
-        local veh = Vehicle(tonumber(v[1]), tonumber(v[2]), tonumber(v[3]), tonumber(v[4]),
-            tonumber(v[5]), tonumber(v[6]), tonumber(v[7]))
-        if veh and isElement(veh) then
+    for _, v in pairs(self.m_MapData["vehicle"] or {}) do
+        local veh = Vehicle(v.model, v.x, v.y, v.z, v.rx, v.ry, v.rz, "iRace")
+        if veh then
             veh:setFrozen(true)
+            veh:setInterior(v.interior or 0)
             veh:setDimension(dim)
             table.insert(self.m_Vehicles, veh)
         end
     end
 
-    for _, v in ipairs(ct["Ped"] or {}) do
-        local ped = Ped(tonumber(v[1]),
-            tonumber(v[2]), tonumber(v[3]), tonumber(v[4]))
+    for _, v in pairs(self.m_MapData["ped"] or {}) do
+        local ped = Ped(v.model, v.x, v.y, v.z, v.rz)
         if ped then
             ped:setDimension(dim)
             table.insert(self.m_Peds, ped)
         end
     end
 
-    for _, v in ipairs(ct["Racepickup"] or {}) do
-        RacePickup:new(v[1], v[2], Vector3(v[3], v[4], v[5]))
+    for _, v in pairs(self.m_MapData["racepickup"]  or {}) do
+        RacePickup:new(v.pickuptype, v.model, Vector3(v.x, v.y, v.z))
     end
 
-    local s = ct["Settings"]
+    local s = self.m_Settings
     if s then
         if s.Time then
             local h = tonumber(gettok(s.Time, 1, ":")) or 12
@@ -124,11 +124,11 @@ end
 function MapManager:unloadMap()
     if not self.m_MapLoaded then return end
 
-    for _, v in ipairs(self.m_Objects)     do if isElement(v) then v:destroy() end end
-    for _, v in ipairs(self.m_Markers)     do if isElement(v) then v:destroy() end end
-    for _, v in ipairs(self.m_Vehicles)    do if isElement(v) then v:destroy() end end
-    for _, v in ipairs(self.m_Peds)        do if isElement(v) then v:destroy() end end
-    for _, v in ipairs(self.m_RacePickups) do if isElement(v) then v:destroy() end end
+    for _, v in pairs(self.m_Objects)     do if isElement(v) then v:destroy() end end
+    for _, v in pairs(self.m_Markers)     do if isElement(v) then v:destroy() end end
+    for _, v in pairs(self.m_Vehicles)    do if isElement(v) then v:destroy() end end
+    for _, v in pairs(self.m_Peds)        do if isElement(v) then v:destroy() end end
+    for _, v in pairs(self.m_RacePickups) do if isElement(v) then v:destroy() end end
 
     self.m_Objects     = {}
     self.m_Markers     = {}
