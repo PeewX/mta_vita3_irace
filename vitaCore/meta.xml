@@ -32,7 +32,7 @@
     <script src="server/classes/Storage/iConnect/serialize.lua" type="server"/>
 
     <script src="server/classes/Core.lua" type="server" />
-    <script src="server/classes/MapManager.lua" type="server" />
+    <script src="server/classes/MapParser.lua" type="server" />
     <script src="server/classes/DatabaseMap.lua" type="server" />
     <script src="server/classes/Map.lua" type="server" />
     <script src="server/classes/Migration.lua" type="server"/>
