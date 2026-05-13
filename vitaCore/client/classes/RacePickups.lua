@@ -92,7 +92,7 @@ end
 
 function RacePickup.rotate()
     local angle = math.fmod((getTickCount() - g_PickupStartTick) * 360 / 2000, 360)
-    local camera = Camera.getMatrix()
+    local camera = Vector3(getCameraMatrix())
 
     for v in pairs(RacePickup.getAll()) do
         if v.m_Object then
@@ -101,12 +101,11 @@ function RacePickup.rotate()
             if v.m_Type == "vehiclechange" and v.m_Object:isOnScreen() then
                 local pos = v.m_Object.position
                 local distanceToPickup = (camera - pos):getLength()
-
                 if distanceToPickup < 60 and isLineOfSightClear(camera.x, camera.y, camera.z, pos.x, pos.y, pos.z, true, false, false, true, false) then
                     local sx, sy = getScreenFromWorldPosition(pos.x, pos.y, pos.z + 1.5)
                     if sx and sy then
                         local scale = (60 / distanceToPickup) * 0.7
-                        local renderText = (">%s<"):format(Vehicle.getNameFromModel(v.m_VehicleId))
+                        local renderText = ("|%s|"):format(Vehicle.getNameFromModel(v.m_VehicleId))
                         dxDrawText(renderText, sx-19, sy+1, sx+20, sy+20, tocolor(0, 0, 0, 255), scale, "default-bold", "center", "top", false, false, false, false, true)
                         dxDrawText(renderText, sx-20, sy,   sx+20, sy+20, tocolor(255, 255, 255, 255), scale, "default-bold", "center", "top", false, false, false, false, true)
                     end

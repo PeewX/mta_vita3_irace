@@ -22,7 +22,6 @@ function Package.load(path, targetPath)
         if targetPath then
             --name = name:gsub("^:[^/]+/", resourceOverwrite .. "/")
             name = ("%s/%s"):format(targetPath, name)
-            outputDebugString("File: " .. name)
         end
 
         if fileExists(name) then fileDelete(name) end
