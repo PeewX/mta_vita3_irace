@@ -4,87 +4,94 @@
 -- Date: 06.05.2026 - Time: 23:05
 -- pewx.de // iRace-mta.de // mtasa.de
 --
-MapManager = inherit(Object)
+MapParser = inherit(Object)
 
-function MapManager:constructor(gamemode)
-    self.m_Gamemode = gamemode
-    self.m_Loaded = false
-    self.m_Objects = {}
+local readFuncs = {
+	object = function(attributes)
+		return {model = tonumber(attributes.model), x = tonumber(attributes.posX), y = tonumber(attributes.posY), z = tonumber(attributes.posZ),
+			rx = tonumber(attributes.rotX), ry = tonumber(attributes.rotY), rz = tonumber(attributes.rotZ), interior = tonumber(attributes.interior), doublesided = toboolean(attributes.doublesided),
+			alpha = tonumber(attributes.alpha), scale = tonumber(attributes.scale), collisions = attributes.collisions}
+	end;
+	marker = function(attributes)
+		return {markertype = attributes.type, x = tonumber(attributes.posX), y = tonumber(attributes.posY), z = tonumber(attributes.posZ),
+			size = tonumber(attributes.size), color = attributes.color,  interior = tonumber(attributes.interior)}
+	end;
+	removeWorldObject = function(attributes)
+		return {radius = tonumber(attributes.radius), model = tonumber(attributes.model), lodModel = tonumber(attributes.lodModel),
+			posX = tonumber(attributes.posX), posY = tonumber(attributes.posY), posZ = tonumber(attributes.posZ), interior = tonumber(attributes.interior)}
+	end;
+	spawnpoint = function(attributes)
+		return {model = tonumber(attributes.vehicle), x = tonumber(attributes.posX), y = tonumber(attributes.posY), z = tonumber(attributes.posZ),
+			rx = tonumber(attributes.rotX), ry = tonumber(attributes.rotY), rz = tonumber(attributes.rotZ)}
+	end;
+	racepickup = function(attributes)
+		return {pickuptype = attributes.type, x = tonumber(attributes.posX), y = tonumber(attributes.posY), z = tonumber(attributes.posZ),
+			rx = tonumber(attributes.rotX), ry = tonumber(attributes.rotY), rz = tonumber(attributes.rotZ), model = tonumber(attributes.vehicle)}
+	end;
+	vehicle = function(attributes)
+		return {model = tonumber(attributes.model), x = tonumber(attributes.posX), y = tonumber(attributes.posY), z = tonumber(attributes.posZ),
+            rx = tonumber(attributes.rotX), ry = tonumber(attributes.rotY), rz = tonumber(attributes.rotZ), interior = tonumber(attributes.interior)}
+	end;
+	ped = function(attributes)
+		return {model = tonumber(attributes.model), x = tonumber(attributes.posX), y = tonumber(attributes.posY), z = tonumber(attributes.posZ),
+			rz = tonumber(attributes.rotZ), interior = tonumber(attributes.interior)}
+	end;
+}
 
-    self.ContentTable = {
-        ["Object"] = {},
-        ["Ped"] = {},
-        ["Vehicle"] = {},
-        ["Racepickup"] = {},
-        ["Spawnpoint"] = {},
-        ["Marker"] = {},
-        ["Settings"] = {},
-        ["ServerScript"] = "",
-        ["ClientScript"] = "",
-        --["ClientFiles"] = {},
-        --["ClientFileHashes"] = {},
-        ["ResourceName"] = self.ResourceName
-    }
-end
-
-function MapManager:load(mapResource, callback)
-    if self.m_Loaded then return end
-    self.m_Loaded = true
+function MapParser:constructor(mapResource)
     self.m_ResourceName = mapResource
+    self.m_Name = ""
+    self.m_Author = ""
+    self.m_MapData = {}
+    self.m_Files = {}
+    self.m_ClientScript = ""
+    self.m_Settings = {}
+
+    outputServerLog("[MapParser] Loading " .. self.m_ResourceName)
 
     local meta = XML.load((":%s/meta.xml"):format(self.m_ResourceName))
-    if not meta then outputServerLog(("[MapManager] Error while loading %s/meta.xml"):format(self.m_ResourceName)) return end
+    if not meta then outputServerLog(("[MapParser] Error while loading %s/meta.xml"):format(self.m_ResourceName)) return end
 
-    --//Get map datas
+	local infoNode = meta:findChild("info", 0)
+	if infoNode then
+		self.m_Name = infoNode:getAttribute("name")
+		self.m_Author = infoNode:getAttribute("author")
+	end
+
     local mapNode = meta:findChild("map", 0)
     local mapPath = mapNode:getAttributes()
     local mapFile = XML.load((":%s/%s"):format(self.m_ResourceName, mapPath.src))
-    if not mapFile then outputServerLog(("[MapManager] Error while loading %s/%s.map"):format(self.m_ResourceName, mapPath.src)) return end
+    if not mapFile then outputServerLog(("[MapParser] Error while loading %s/%s.map"):format(self.m_ResourceName, mapPath.src)) return end
 
     local mapNodes = mapFile:getChildren()
-    for k, v in ipairs(mapNodes) do
-        local type = v:getName()
-        local attributes = v:getAttributes()
-
-        if type == "object" then
-            local col = attributes["collisions"] or true
-            local a = attributes["alpha"] or 255
-            local int = attributes["interior"] or 0
-            local scale = attributes["scale"] or 1
-            table.insert(self.ContentTable["Object"], {attributes["model"], attributes["posX"], attributes["posY"], attributes["posZ"], attributes["rotX"], attributes["rotY"], attributes["rotZ"], int, col, a, scale, attributes["doublesided"]})
-        elseif type == "marker" then
-            table.insert(self.ContentTable["Marker"], {attributes["posX"], attributes["posY"], attributes["posZ"], attributes["type"], attributes["size"], attributes["color"], attributes["interior"], attributes["id"]})
-         elseif type == "vehicle" then
-            table.insert(self.ContentTable["Vehicle"], {attributes["model"], attributes["posX"], attributes["posY"], attributes["posZ"], attributes["rotX"], attributes["rotY"], attributes["rotZ"]})
-        elseif type == "racepickup" then
-            table.insert(self.ContentTable["Racepickup"], {attributes["type"], attributes["vehicle"], attributes["posX"], attributes["posY"], attributes["posZ"], attributes["rotX"], attributes["rotY"], attributes["rotZ"]})
-        elseif type == "spawnpoint" then
-            table.insert(self.ContentTable["Spawnpoint"], {attributes["vehicle"], attributes["posX"], attributes["posY"], attributes["posZ"], attributes["rotX"], attributes["rotY"], attributes["rotZ"]})
-        elseif type == "ped" then
-            table.insert(self.ContentTable["Ped"], {attributes["model"], attributes["posX"], attributes["posY"], attributes["posZ"], attributes["rotX"], attributes["rotY"], attributes["rotZ"]})
+    for _, node in pairs(mapNodes or {}) do
+		local nodeName = node:getName()
+		if readFuncs[nodeName] then
+            if not self.m_MapData[nodeName] then self.m_MapData[nodeName] = {} end
+			table.insert(self.m_MapData[nodeName], readFuncs[nodeName](node:getAttributes()))
         else
-            outputServerLog("[MapManager] Warning: Undefined type to extract in map " .. self.m_ResourceName)
-        end
-    end
+            outputServerLog(("[MapParser] Warning: Undefined read function '%s' for map: '%s'"):format(nodeName, self.m_ResourceName))
+		end
+	end
 
-    local packageFiles = {}
-    --//Load awesome Map scripts
+    mapFile:unload()
+
     local nodes = meta:getChildren()
-    for k, v in ipairs(nodes) do
+    for _, v in pairs(nodes) do
         if v:getName() == "script" then
             local scriptInfo = v:getAttributes()
             if scriptInfo.type and (scriptInfo.type == "client" or scriptInfo.type == "shared") then
                 local path = (":%s/%s"):format(self.m_ResourceName, scriptInfo.src)
                 local scriptFile = File.open(path, true)
                 if scriptFile then
-                    self.ContentTable["ClientScript"] = ("%s %s"):format(self.ContentTable["ClientScript"], scriptFile:read(scriptFile:getSize()))
+                    self.m_ClientScript = ("%s\n%s"):format(self.m_ClientScript, scriptFile:read(scriptFile:getSize()))
                     scriptFile:close()
                 end
             -- For security reasons, serverside scripts are not supported
-            --else
+            -- else
             --    local scriptFile = File((":%s/%s"):format(self.m_ResourceName, scriptInfo.src), true)
             --    if scriptFile then
-            --        self.ContentTable["ServerScript"] = ("%s %s"):format(self.ContentTable["ServerScript"], scriptFile:read(scriptFile:getSize()))
+            --        self.m_ServerScript = ("%s %s"):format(self.m_ServerScript, scriptFile:read(scriptFile:getSize()))
             --        scriptFile:close()
             --    end
             end
@@ -92,36 +99,35 @@ function MapManager:load(mapResource, callback)
             local fileInfo = v:getAttributes()
             if fileInfo.src then
                 local path = (":%s/%s"):format(self.m_ResourceName, fileInfo.src)
-                local fileFile = File.open(path, true)
-                if fileFile then
-                    table.insert(packageFiles, path)
-                    --table.insert(self.ContentTable["ClientFiles"], {src = fileInfo.src, content = fileFile:read(fileFile:getSize())})
-                    --table.insert(self.ContentTable["ClientFileHashes"], {src = fileInfo.src, hash = md5(fileFile:read(fileFile:getSize()))})
-                    fileFile:close()
-                end
+                table.insert(self.m_Files, path)
             end
         end
     end
 
-    local packageName = self.m_ResourceName .. ".data"
-    if #packageFiles > 0 then
-        outputServerLog("Files for package: " .. tostring(#packageFiles))
-        Package.save(packageName, packageFiles)
-        Provider:getSingleton():offerFile(packageName)
-    else
-        packageName = nil
+    meta:unload()
+
+    self.m_Settings.Weather = tonumber(get(("#%s.weather"):format(self.m_ResourceName))) or 0
+    self.m_Settings.Time = get(("#%s.time"):format(self.m_ResourceName)) or "12:00"
+    self.m_Settings.Gravity = tonumber(get(("#%s.gravity"):format(self.m_ResourceName))) or 0.008000
+    self.m_Settings.Waveheight = tonumber(get(("#%s.waveheight"):format(self.m_ResourceName))) or 0
+
+    if #self.m_Files > 0 then
+        self.m_Package = (":vitaWrapper/packages/%s.data"):format(self.m_ResourceName)
+        outputServerLog("[MapParser] Files for package: " .. tostring(#self.m_Files))
+        Package.save(self.m_Package, self.m_Files, true)
+        Provider:getSingleton():offerFile(self.m_Package)
     end
 
-    --//Load Map settings
-    self.ContentTable["Settings"].Weather = tonumber(get(("#%s.weather"):format(self.m_ResourceName))) or 0
-    self.ContentTable["Settings"].Time = get(("#%s.time"):format(self.m_ResourceName)) or "12:00"
-    self.ContentTable["Settings"].Gravity = tonumber(get(("#%s.gravity"):format(self.m_ResourceName))) or 0.008000
-    self.ContentTable["Settings"].Waveheight = tonumber(get(("#%s.waveheight"):format(self.m_ResourceName))) or 0
-
-    outputServerLog("[MapManager] Successfully loaded: " .. self.m_ResourceName)
-    outputServerLog("[MapManager] Spawnpoints: " .. #self.ContentTable["Spawnpoint"])
-    setTimer(function() callback(self.ContentTable, packageName) end, 500, 1)
+    outputServerLog("[MapParser] Spawnpoints: " .. #self.m_MapData["spawnpoint"])
+    outputServerLog("[MapParser] Successfully loaded: " .. self.m_ResourceName)
 end
 
-function MapManager:unload()
+function MapParser:destructor()
+    self.m_ResourceName = nil
+    self.m_Name = nil
+    self.m_Author = nil
+    self.m_MapData = nil
+    self.m_Files = nil
+    self.m_ClientScript = nil
+    self.m_Settings = nil
 end
