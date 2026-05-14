@@ -3,11 +3,11 @@
 -- Using: VSCode
 -- Date: 30.04.2026 - Time: 23:23
 -- pewx.de // iRace-mta.de // mtasa.de
+--
 
 TimeTrial = inherit(Singleton)
-addRemoteEvents {"joinTT", "quitTT", "playerGotHunterTT", "downloadMapFinished", "mapReady"}
+addRemoteEvents {"joinTT", "playerGotHunterTT", "downloadMapFinished", "mapReady"}
 
-local MAP_DURATION     = 10 * 60 * 1000  -- 10 minutes (kept in sync with Map.lua)
 local LOBBY_INTERVAL   = 5000            -- ms between lobby timer ticks
 local LOBBY_TICKS      = 6              -- 6 * 5000 = 30 seconds of lobby wait
 
@@ -25,7 +25,6 @@ function TimeTrial:constructor()
     self.m_Element:setData("rankingboard", {})
     self.m_Element:setData("map",          "none")
 
-    self.m_MapManager  = MapManager:new(self.m_GamemodeId)
     self.m_CurrentMap  = nil
     self.m_NextMapname = "random"
 
@@ -38,7 +37,6 @@ function TimeTrial:constructor()
     self.m_Rankingboard = {}
 
     addEventHandler("joinTT",               root, bind(self.onJoin,             self))
-    addEventHandler("quitTT",               root, bind(self.onQuit,             self))
     addEventHandler("playerGotHunterTT",    root, bind(self.onPlayerFinish,     self))
     addEventHandler("downloadMapFinished",  root, bind(self.onDownloadFinished, self))
     --addEventHandler("mapReady",             root, bind(self.onMapReady,         self))
@@ -105,7 +103,7 @@ function TimeTrial:onJoin()
     end
 end
 
-function TimeTrial:onQuit()
+function TimeTrial:onQuit(client)
     local player = client
     if not self.m_Players[player] then return end
 
@@ -118,6 +116,9 @@ function TimeTrial:onQuit()
         self:_unloadMap()
     end
 end
+
+-- Legacy compatibility...
+function quitTT(player) return TimeTrial:getSingleton():onQuit(player) end
 
 function TimeTrial:onPlayerDisconnect()
     if not self.m_Players[source] then return end
@@ -144,42 +145,25 @@ end
 -- ==================== MAP LOADING ====================
 
 function TimeTrial:_loadMap(mapname)
-    outputServerLog("Loading map: " .. mapname)
     self.m_Element:setData("map",     "none")
     self.m_Element:setData("mapname", "loading...")
 
-    -- Resolve "random" – TT uses DM maps; fall back if no TT-prefix maps exist
-    if mapname == "random" then
+    if not mapname or mapname == "random" then
         mapname = getRandomMap(GAMEMODES.DM)
     end
 
-    self.m_MapManager:load(mapname,
-        function(contentTable, packageName)
-            local resourceName = contentTable["ResourceName"] or mapname
-            local displayName  = resourceName
-            local spawnPositions = contentTable["Spawnpoint"]
+    self.m_CurrentMap = Map:new(self, mapname)
+    self.m_Rankingboard = {}
 
-            self.m_CurrentMap = Map:new(resourceName, displayName, spawnPositions, contentTable, self.m_GamemodeId, bind(self._onMapEnd, self))
-            self.m_CurrentPackageName = packageName
+    for player in pairs(self.m_Players) do
+        self:_setupPlayer(player)
+    end
 
-            self.m_Element:setData("map",          resourceName)
-            self.m_Element:setData("mapname",      displayName)
-            self.m_Element:setData("nextmap",      self.m_NextMapname)
-            self.m_Element:setData("nextmapname",  self.m_NextMapname)
-            self.m_Element:setData("duration",     MAP_DURATION)
-            self.m_Element:setData("rankingboard", {})
-            self.m_Rankingboard = {}
-
-            for player in pairs(self.m_Players) do
-                self:_setupPlayer(player)
-            end
-
-            self:_startLobbyCountdown()
-        end
-    )
+    self:_startLobbyCountdown()
 end
 
 function TimeTrial:_unloadMap()
+    outputServerLog("Unloading map: " .. self.m_CurrentMap:getName())
     if self.m_LobbyTimer and isTimer(self.m_LobbyTimer) then
         killTimer(self.m_LobbyTimer)
         self.m_LobbyTimer = false
@@ -196,11 +180,6 @@ function TimeTrial:_unloadMap()
         self.m_CurrentMap = nil
     end
 
-    self.m_MapManager:unload()
-
-    self.m_Element:setData("map",          "none")
-    self.m_Element:setData("mapname",      "loading...")
-    self.m_Element:setData("startTick",    nil)
     self.m_Element:setData("rankingboard", {})
     self.m_Rankingboard = {}
 
@@ -328,14 +307,14 @@ end
 function TimeTrial:_setupPlayer(player)
     callClientFunction(player, "spectateEnd")
 
-    player:triggerLatentEvent("loadMap", self.m_CurrentMap.m_ContentTable,  self.m_CurrentPackageName)
+    self.m_CurrentMap:sendToPlayer(player)
 
     if self.m_Is_Running then return end
 
     self.m_CurrentMap:assignSpawn(player)
     self:_spawnPlayerAtStart(player)
 
-    player:setData("mapname", self.m_CurrentMap.m_DisplayName)
+    player:setData("mapname", self.m_CurrentMap:getName())
     player:setData("nextmap", self.m_NextMapname)
     player:setData("state",   "not ready")
 end
@@ -351,10 +330,10 @@ function TimeTrial:_spawnPlayerAtStart(player)
     if not spawn then return end
 
     player:setCameraTarget()
-    player:spawn(Vector3(spawn[2], spawn[3], spawn[4]))
+    player:spawn(Vector3(spawn.x, spawn.y, spawn.z))
     player:setDimension(self.m_GamemodeId)
 
-    local veh = Vehicle(spawn[1], spawn[2], spawn[3], spawn[4], spawn[5], spawn[6], spawn[7], "Vita")
+    local veh = Vehicle(spawn.model, spawn.x, spawn.y, spawn.z, spawn.rx, spawn.ry, spawn.rz, "iRace")
     veh:setDimension(self.m_GamemodeId)
     veh:setFrozen(true)
     veh:setDamageProof(true)
@@ -464,10 +443,8 @@ function TimeTrial:_respawnPlayer(player)
     if not spawn then return end
 
     player:setCameraTarget()
-    player:spawn(Vector3(spawn[2], spawn[3], spawn[4]))
-    player:setDimension(self.m_GamemodeId)
 
-    local veh = Vehicle(spawn[1], spawn[2], spawn[3], spawn[4], spawn[5], spawn[6], spawn[7], "Vita")
+    local veh = Vehicle(spawn.model, spawn.x, spawn.y, spawn.z, spawn.rx, spawn.ry, spawn.rz, "iRace")
     veh:setDimension(self.m_GamemodeId)
     veh:setFrozen(true)
     veh:setDamageProof(true)
@@ -546,10 +523,7 @@ end
 -- ==================== RANKING ====================
 
 function TimeTrial:_addRankingEntry(player, finishTime)
-    local entry = {
-        text = _getPlayerName(player) .. "#FFFFFF: " .. msToTimeStr(finishTime),
-        ply  = player,
-    }
+    local entry = {text = ("%s#FFFFFF: %s"):format(_getPlayerName(player), msToTimeStr(finishTime)), ply  = player}
     table.insert(self.m_Rankingboard, entry)
     self.m_Element:setData("rankingboard", self.m_Rankingboard)
 end
@@ -577,5 +551,5 @@ function TimeTrial:_resetPlayerState(player)
     player:setInterior(0)
     player:spawn(0, 0, 0)
     player:setFrozen(true)
-    player:triggerEvent("stopMapTT", getRootElement())
+    player:triggerEvent("stopMap")
 end

@@ -19,11 +19,8 @@ function MapManager:constructor()
     addEventHandler("stopMap", root, bind(self.onStopMap, self))
 end
 
-function MapManager:onLoadMap(mapData, mapSettings, mapScript, packageName, ts)
-    local tts = getTimestamp()
+function MapManager:onLoadMap(mapData, mapSettings, mapScript, packageName)
     self:unloadMap()
-
-    outputDebugString(("Received Map in %d ms"):format(tts - ts))
 
     self.m_MapData = mapData
     self.m_Settings = mapSettings
@@ -44,7 +41,7 @@ function MapManager:onLoadMap(mapData, mapSettings, mapScript, packageName, ts)
         self:_notifyReady()
     end
 
-    outputDebugString(("Client loaded Map in %d ms"):format(getTimestamp() - tts))
+    self.m_MapLoaded = true
 end
 
 function MapManager:onStopMap()
@@ -105,7 +102,8 @@ function MapManager:_loadMapElements()
     end
 
     for _, v in pairs(self.m_MapData["racepickup"]  or {}) do
-        RacePickup:new(v.pickuptype, v.model, Vector3(v.x, v.y, v.z))
+        local pickup = RacePickup:new(v.pickuptype, v.model, Vector3(v.x, v.y, v.z))
+        table.insert(self.m_RacePickups, pickup)
     end
 
     local s = self.m_Settings
@@ -128,7 +126,7 @@ function MapManager:unloadMap()
     for _, v in pairs(self.m_Markers)     do if isElement(v) then v:destroy() end end
     for _, v in pairs(self.m_Vehicles)    do if isElement(v) then v:destroy() end end
     for _, v in pairs(self.m_Peds)        do if isElement(v) then v:destroy() end end
-    for _, v in pairs(self.m_RacePickups) do if isElement(v) then v:destroy() end end
+    for _, v in pairs(self.m_RacePickups) do if v then delete(v) end end
 
     self.m_Objects     = {}
     self.m_Markers     = {}

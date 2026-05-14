@@ -131,3 +131,7 @@ function MapParser:destructor()
     self.m_ClientScript = nil
     self.m_Settings = nil
 end
+
+function MapParser:getSpawns()
+    return self.m_MapData.spawnpoint or {}
+end

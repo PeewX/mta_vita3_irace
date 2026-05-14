@@ -1,29 +1,26 @@
 --
 -- PewX (HorrorClown)
--- Map.lua - Runtime state of a single loaded TT map
+-- Using: VSCode
+-- Date: 13.05.2026 - Time: 23:23
+-- pewx.de // iRace-mta.de // mtasa.de
 --
-
 Map = inherit(Object)
 
 local MAP_DURATION   = 10 * 60 * 1000  -- 10 minutes
 local GRACE_DURATION =      60 * 1000  -- 60 s grace after timer expires
 
--- Constructor
--- @param mapname        resource name (e.g. "DM-MyMap")
--- @param displayName    human-readable name from map meta
--- @param spawnPositions array of { posX,posY,posZ, rotX,rotY,rotZ, vehicle, interior, used }
--- @param contentTable   parsed map data table from MapManager
--- @param gamemodeDim    MTA dimension for this gamemode (GAMEMODES.TT = 7)
--- @param onEndCallback  function() called when the map should end
-function Map:constructor(mapname, displayName, spawnPositions, contentTable, gamemodeDim, onEndCallback)
-    self.m_Mapname        = mapname
-    self.m_DisplayName    = displayName
-    self.m_SpawnPositions = spawnPositions
-    self.m_ContentTable   = contentTable
-    self.m_GamemodeDim    = gamemodeDim
-    self.m_OnEndCallback  = onEndCallback
+function Map:constructor(gamemode, resourceName)
+    self.m_Gamemode = gamemode
+    self.m_Map = MapParser:new(resourceName)
+    self.m_ResourceName = resourceName
+    self.m_SpawnPositions = self.m_Map:getSpawns()
 
-    self.m_Is_Running   = false
+    self.m_Gamemode.m_Element:setData("map",          resourceName)
+    self.m_Gamemode.m_Element:setData("mapname",      self.m_Map.m_Name)
+    self.m_Gamemode.m_Element:setData("nextmap",      "random")
+    self.m_Gamemode.m_Element:setData("nextmapname",  "")
+    self.m_Gamemode.m_Element:setData("duration",     MAP_DURATION)
+
     self.m_Has_Ended    = false   -- true once the 10-min timer fires; grace period active
     self.m_MapTimer     = false
     self.m_GraceTimer   = false
@@ -33,7 +30,8 @@ function Map:constructor(mapname, displayName, spawnPositions, contentTable, gam
     self.m_PlayerActive      = {}  -- [player] = true while a player is in an active attempt
     self.m_PlayerDoneAfterEnd = {} -- [player] = true once their last attempt ended (grace period)
 
-    self.m_DatabaseMap = DatabaseMap:new(mapname)
+    self.m_OnEndCallback = bind(gamemode._onMapEnd, gamemode)
+    self.m_DatabaseMap = DatabaseMap:new(self.m_ResourceName)
     self.m_TimesPlayed = self.m_DatabaseMap.m_Timesplayed
 end
 
@@ -44,8 +42,26 @@ function Map:destructor()
     if self.m_DatabaseMap then
         self.m_DatabaseMap.m_Timesplayed = self.m_DatabaseMap.m_Timesplayed + 1
         delete(self.m_DatabaseMap)
-        self.m_DatabaseMap = false
+        self.m_DatabaseMap = nil
     end
+
+    if self.m_Map then
+        delete(self.m_Map)
+        self.m_Map = nil
+    end
+
+    self.m_Gamemode.m_Element:setData("map",      "none")
+    self.m_Gamemode.m_Element:setData("mapname",  "loading...")
+    self.m_Gamemode.m_Element:setData("startTick", nil)
+end
+
+function Map:sendToPlayer(player)
+    outputDebugString("Send map to player..")
+    player:triggerLatentEvent("loadMap", self.m_Map.m_MapData, self.m_Map.m_Settings, self.m_Map.m_ClientScript, self.m_Map.m_Package)
+end
+
+function Map:getName()
+    return self.m_Map.m_Name or self.m_ResourceName
 end
 
 -- ==================== TIMER ====================
@@ -53,7 +69,6 @@ end
 -- Start the 10-minute map-duration timer.
 -- Returns the duration in ms so the caller can persist it on the element.
 function Map:startTimer()
-    self.m_Is_Running = true
     self.m_MapTimer   = setTimer(bind(self._onTimerExpired, self), MAP_DURATION, 1)
     return MAP_DURATION
 end
@@ -92,7 +107,7 @@ end
 -- Falls back to wrapping when all spawns are taken.
 -- Returns the assigned spawn index.
 function Map:assignSpawn(player)
-    for i, spawn in ipairs(self.m_SpawnPositions) do
+    for i, spawn in ipairs(self.m_Map:getSpawns()) do
         if not spawn.used then
             spawn.used = true
             self.m_PlayerSpawns[player] = i
