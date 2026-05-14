@@ -44,7 +44,7 @@ function MapParser:constructor(mapResource)
     self.m_Author = ""
     self.m_MapData = {}
     self.m_Files = {}
-    self.m_ClientScript = ""
+    self.m_ClientScripts = {}
     self.m_Settings = {}
 
     outputServerLog("[MapParser] Loading " .. self.m_ResourceName)
@@ -84,7 +84,7 @@ function MapParser:constructor(mapResource)
                 local path = (":%s/%s"):format(self.m_ResourceName, scriptInfo.src)
                 local scriptFile = File.open(path, true)
                 if scriptFile then
-                    self.m_ClientScript = ("%s\n%s"):format(self.m_ClientScript, scriptFile:read(scriptFile:getSize()))
+                    table.insert(self.m_ClientScripts, {filePath = path, content = scriptFile:read(scriptFile:getSize())})
                     scriptFile:close()
                 end
             -- For security reasons, serverside scripts are not supported
@@ -128,7 +128,7 @@ function MapParser:destructor()
     self.m_Author = nil
     self.m_MapData = nil
     self.m_Files = nil
-    self.m_ClientScript = nil
+    self.m_ClientScripts = nil
     self.m_Settings = nil
 end
 

@@ -19,19 +19,15 @@ function MapManager:constructor()
     addEventHandler("stopMap", root, bind(self.onStopMap, self))
 end
 
-function MapManager:onLoadMap(mapData, mapSettings, mapScript, packageName)
+function MapManager:onLoadMap(mapData, mapSettings, mapScripts, packageName)
     self:unloadMap()
 
     self.m_MapData = mapData
     self.m_Settings = mapSettings
-    self.m_Script = mapScript
+    self.m_Scripts = mapScripts
     self.m_Package  = packageName
 
     self:_loadMapElements()
-
-    if self.m_Script and self.m_Script ~= "" and exports.vitaWrapper and exports.vitaWrapper.execMapScript then
-        exports.vitaWrapper:execMapScript(self.m_Script)
-    end
 
     if self.m_Package then
         outputDebugString("Request Package " .. self.m_Package)
@@ -46,6 +42,7 @@ end
 
 function MapManager:onStopMap()
     self:unloadMap()
+    exports.vitaWrapper:stopMapScript()
 end
 
 function MapManager:_onPackageReady()
@@ -56,6 +53,10 @@ end
 
 function MapManager:_notifyReady()
     triggerServerEvent("downloadMapFinished", localPlayer)
+
+    if self.m_Scripts and exports.vitaWrapper and exports.vitaWrapper.executeMapScript then
+        exports.vitaWrapper:executeMapScript(self.m_Scripts)
+    end
 end
 
 function MapManager:_loadMapElements()

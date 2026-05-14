@@ -57,7 +57,7 @@ end
 
 function Map:sendToPlayer(player)
     outputDebugString("Send map to player..")
-    player:triggerLatentEvent("loadMap", self.m_Map.m_MapData, self.m_Map.m_Settings, self.m_Map.m_ClientScript, self.m_Map.m_Package)
+    player:triggerLatentEvent("loadMap", self.m_Map.m_MapData, self.m_Map.m_Settings, self.m_Map.m_ClientScripts, self.m_Map.m_Package)
 end
 
 function Map:getName()
