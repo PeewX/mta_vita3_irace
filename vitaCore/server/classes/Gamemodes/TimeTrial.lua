@@ -461,6 +461,7 @@ function TimeTrial:_runPlayerCountdown(player, onDone)
     local steps = {3, 2, 1, 0}
     local function step(i)
         if not isElement(player) or not isInGamemode(player, self.m_GamemodeId) then return end
+        if not self.m_Is_Running then return end
         local id = steps[i]
         callClientFunction(player, "countdownClientFunc", id)
         callClientFunction(player, "playSound", ("files/audio/%d.mp3"):format(id))
