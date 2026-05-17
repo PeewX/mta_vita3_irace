@@ -607,3 +607,11 @@ addCommandHandler("drun",
 		runString(codeString, player)
 	end
 )
+
+addCommandHandler("dcrun",
+	function(player, cmd, ...)
+		if not player:hasRights("Owner") then return end
+		local codeString = table.concat({...}, " ")
+		player:triggerEvent("runString", codeString)
+	end
+)

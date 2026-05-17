@@ -1,11 +1,12 @@
-LocalPlayer = {}
-addRemoteEvents{"retrieveInfo", "setOwner"}
+LocalPlayer = inherit(Object)
+registerElementClass("player", LocalPlayer)
+addRemoteEvents{"retrieveInfo", "runString"}
 
 function LocalPlayer:constructor()
     self.m_LoggedIn = false
 
     addEventHandler("retrieveInfo", root, bind(self.Event_retrieveInfo, self))
-    addEventHandler("setOwner", self, bind(self.Event_SetOwner, self))
+    addEventHandler("runString", self, bind(self.Event_RunString, self))
 end
 
 function LocalPlayer:desturctor()
@@ -30,11 +31,10 @@ function LocalPlayer:Event_retrieveInfo(info)
     end
 end
 
-function LocalPlayer:Event_SetOwner()
-    addCommandHandler("dcrun",
-        function(cmd, ...)
-            local codeString = table.concat({...}, " ")
-            runString(codeString, localPlayer)
-        end
-    )
+function LocalPlayer:getGamemode()
+    return self:getData("gameMode") or 0
+end
+
+function LocalPlayer:Event_RunString(codeString)
+    runString(codeString, localPlayer)
 end

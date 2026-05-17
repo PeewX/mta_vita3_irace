@@ -85,7 +85,7 @@ function DatabasePlayer:load()
     self:updateTeam()
 
     if self.m_Level == "Owner" then
-       self:triggerEvent("setOwner")
+       --self:triggerEvent("setOwner")
     end
 
     if self.m_Level == "Leader" then

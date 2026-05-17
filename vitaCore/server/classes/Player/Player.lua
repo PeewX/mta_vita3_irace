@@ -38,6 +38,10 @@ function Player:triggerLatentEvent(ev, ...)
 	end
 end
 
+function Player:getGamemode()
+    return self:getData("gameMode") or 0
+end
+
 function Player:callFunction(...)
     callClientFunction(self, ...)
 end
