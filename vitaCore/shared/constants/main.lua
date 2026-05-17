@@ -18,3 +18,9 @@ VEHICLES = {
     HUNTER = 425,
     INFERNUS = 411
 }
+
+AUTO_AFK_ENABLED = {
+    [GAMEMODES.DM] = true,
+    [GAMEMODES.DD] = true,
+    [GAMEMODES.SHOOTER] = true,
+}
