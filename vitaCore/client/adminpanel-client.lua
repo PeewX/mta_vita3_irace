@@ -256,7 +256,9 @@ addEventHandler("onClientGUIChanged", guiAdminGUI["maps_edit"], function()
 			dxGridListReplaceRows(guiAdminDX["maps_list"], gAllTheMapsRA)		
 		elseif getPlayerGameMode(getLocalPlayer()) == 5 then
 			dxGridListReplaceRows(guiAdminDX["maps_list"], gAllTheMapsDM)
-		end	
+		elseif getPlayerGameMode(localPlayer) == GAMEMODES.TT then
+			dxGridListReplaceRows(guiAdminDX["maps_list"], gAllTheMapsDM)
+		end
 	else
 		local mapTable = {}
 		local mapTable2 = {}
@@ -268,8 +270,10 @@ addEventHandler("onClientGUIChanged", guiAdminGUI["maps_edit"], function()
 			mapTable = gAllTheMapsRA
 		elseif getPlayerGameMode(getLocalPlayer()) == 5 then
 			mapTable = gAllTheMapsDM
-		end	
-		
+		elseif getPlayerGameMode(localPlayer) == GAMEMODES.TT then
+			mapTable = gAllTheMapsDM
+		end
+
 		for i,v in ipairs(mapTable) do
 			if string.find (string.upper (tostring(v.text)), string.upper (guiGetText(source))) ~= nil then
 				mapTable2[#mapTable2+1] = v
@@ -312,7 +316,9 @@ function refreshAdminPanel(refresh)
 			dxGridListReplaceRows(guiAdminDX["maps_list"], gAllTheMapsRA)		
 		elseif getPlayerGameMode(getLocalPlayer()) == 5 then
 			dxGridListReplaceRows(guiAdminDX["maps_list"], gAllTheMapsDM)
-		end		
+		elseif getPlayerGameMode(localPlayer) == GAMEMODES.TT then
+			dxGridListReplaceRows(guiAdminDX["maps_list"], gAllTheMapsDM)
+		end
 	end
 	
 	guiSetText(guiAdminGUI["maps_edit"], "")
@@ -537,7 +543,7 @@ function drawAdminPanel()
 		else
 			dxDrawShadowedText("Gamemode Maps: ", x+10,y+40, screenWidth, screenHeight, tocolor(255,255,255,255),tocolor(0,0,0,255), 1,"default-bold", "left", "top", false, false, false, true)
 			dxSetPosition(guiAdminDX["maps_list"], x+10, y+60,false)
-			dxSetVisible(guiAdminDX["maps_list"], true)	
+			dxSetVisible(guiAdminDX["maps_list"], true)
 			
 			dxSetPosition(guiAdminDX["maps_set"],  x+330,y+332,false)
 			dxSetPosition(guiAdminDX["maps_redo"],  x+330,y+358,false)

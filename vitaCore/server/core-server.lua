@@ -106,7 +106,7 @@ addEventHandler("onPlayerJoin", getRootElement(), playerJoin)
 function playerRequestInitialise()
 	local allTheMaps = {}
 	local resourceTable = getResources()
-    for resourceKey, resourceValue in ipairs(resourceTable) do
+    for _, resourceValue in pairs(resourceTable) do
         local name = getResourceName ( resourceValue )
 		local maptype = getResourceInfo ( resourceValue, "type" )
 		local mapname = getResourceInfo ( resourceValue, "name")
@@ -118,8 +118,9 @@ function playerRequestInitialise()
 				allTheMaps[#allTheMaps].realname = mapname
 			end
 		end
-	end	
-	triggerLatentClientEvent ( source, "priorReceiveAllTheMaps", 50000, getRootElement(), allTheMaps )
+	end
+
+	client:triggerLatentEvent("priorReceiveAllTheMaps", allTheMaps)
 end
 addEvent("onPlayerRequestInitialise", true)
 addEventHandler("onPlayerRequestInitialise", getRootElement(), playerRequestInitialise)
@@ -406,7 +407,8 @@ function setNextMap(id, mapname)
 		if resource then
 			local maptype = getResourceInfo(resource, "type")
 			local displayname = getResourceInfo(resource, "name")
-			if string.find (string.upper (mapname), gRaceModes[id].prefix) ~= nil and maptype == "map" then
+			local prefix = id == GAMEMODES.TT and gRaceModes[GAMEMODES.DM].prefix or gRaceModes[id].prefix
+			if string.find (string.upper (mapname), prefix) ~= nil and maptype == "map" then
 				setElementData(gameModeElement, "nextmap", mapname)
 				setElementData(gameModeElement, "nextmapname", displayname or mapname)
 				return true

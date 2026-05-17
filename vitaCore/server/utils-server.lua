@@ -89,7 +89,7 @@ function givePlayerMoney(player,ammount)
 end
 
 function executeServerCommandHandler(commandHandler, args)
-	executeCommandHandler(commandHandler, source, args)
+	executeCommandHandler(commandHandler, client, args)
 end
 addEvent("executeServerCommandHandler", true)
 addEventHandler("executeServerCommandHandler", getRootElement(), executeServerCommandHandler)

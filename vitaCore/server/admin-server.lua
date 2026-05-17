@@ -68,8 +68,9 @@ function skipMap(player, commandName)
 			elseif gameMode == 2 then gameElement = gElementDD 
 			elseif gameMode == 3 then gameElement = gElementRA 
 			elseif gameMode == 5 then gameElement = gElementDM
+			elseif gameMode == GAMEMODES.TT then gameElement = TimeTrial:getSingleton().m_Element
 			else return end
-			callServerFunction(gRaceModes[gameMode].loadfunc, getElementData(gameElement, "nextmap"))		
+			callServerFunction(gRaceModes[gameMode].loadfunc, getElementData(gameElement, "nextmap"))
 			for i,v in ipairs(getGamemodePlayers(gameMode)) do
 				triggerClientEvent ( v, "addNotification", getRootElement(), 3, 18, 88, 97, "Current map skipped by "..getPlayerName(player).."." )
 			end
@@ -112,8 +113,9 @@ function setMap(player, commandName, ...)
 		local gameModeElement = getGamemodeElement(gameMode)
 		if getElementData(gameModeElement, "map") ~= "none" and getElementData(gameModeElement, "nextmap") == "random" then
 			if setNextMap(gameMode, mapname) or (getMapNameByRealName(mapname) ~= false and setNextMap(gameMode, getMapNameByRealName(mapname))) then
-				for i,v in ipairs(getGamemodePlayers(getPlayerGameMode(player))) do
-					triggerClientEvent ( v, "addNotification", getRootElement(), 3, 18, 88, 97, "Next map ("..getElementData(gameModeElement, "nextmapname")..") set by "..getPlayerName(player).."." )
+				for _, v in pairs(getGamemodePlayers(getPlayerGameMode(player))) do
+					v:triggerEvent("addNotification", 3, 18, 88, 97, ("Next map (%s) set by %s"):format(gameModeElement:getData("nextmapname"), getPlayerName(player)))
+					--triggerClientEvent ( v, "addNotification", getRootElement(), 3, 18, 88, 97, "Next map ("..getElementData(gameModeElement, "nextmapname")..") set by "..getPlayerName(player).."." )
 				end				
 				--outputChatBoxToGamemode ( "#125861:ADMIN:#FFFFFF "..getPlayerName(player).." #FFFFFFhas set the next map to "..getElementData(gameModeElement, "nextmapname")..".",gameMode, 255, 0, 0, true)	
 			else

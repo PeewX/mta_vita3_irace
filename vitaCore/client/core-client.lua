@@ -45,7 +45,6 @@ function onClientResourceStart()
 		xmlUnloadFile(vitaXML)
 	end]]
 
-	
 	racemodesClientStart()
 	showChat(false)
 	fadeCamera(true)
@@ -55,11 +54,10 @@ function onClientResourceStart()
 	setPlayerHudComponentVisible("crosshair", true)
 	setPedCanBeKnockedOffBike(getLocalPlayer(), false)
 	setCameraClip ( true, false )
-	
+
 	g_PickupStartTick = getTickCount()
-	
-	triggerServerEvent ( "onPlayerRequestInitialise", getLocalPlayer() )
-	--addEventHandler ( "onClientRender", getRootElement(), notInitialisedRender)
+
+	triggerServerEvent("onPlayerRequestInitialise", localPlayer)
 end
 addEventHandler("onClientResourceStart", getResourceRootElement(getThisResource()), onClientResourceStart)
 
@@ -81,47 +79,26 @@ addEventHandler("priorReceiveAllTheMaps", getRootElement(),
 				elseif string.find (string.upper (tostring(v.name)), "DD") ~= nil then
 					gAllTheMapsDD[#gAllTheMapsDD+1] = {}
 					gAllTheMapsDD[#gAllTheMapsDD].text = realname
-					gAllTheMapsDD[#gAllTheMapsDD].data = v.name				
+					gAllTheMapsDD[#gAllTheMapsDD].data = v.name
 				elseif string.find (string.upper (tostring(v.name)), "DM") ~= nil then
 					gAllTheMapsDM[#gAllTheMapsDM+1] = {}
 					gAllTheMapsDM[#gAllTheMapsDM].text = realname
-					gAllTheMapsDM[#gAllTheMapsDM].data = v.name		
+					gAllTheMapsDM[#gAllTheMapsDM].data = v.name
 				elseif string.find (string.upper (tostring(v.name)), "SHOOTER") ~= nil then
 					gAllTheMapsSH[#gAllTheMapsSH+1] = {}
 					gAllTheMapsSH[#gAllTheMapsSH].text = realname
-					gAllTheMapsSH[#gAllTheMapsSH].data = v.name							
+					gAllTheMapsSH[#gAllTheMapsSH].data = v.name
 				end
-			end	
+			end
 		end
-		
-	table.sort(gAllTheMapsDM, 
-		function(a, b)
-			return a.text < b.text
-		end
-	)
-	table.sort(gAllTheMapsSH, 
-		function(a, b)
-			return a.text < b.text
-		end
-	)	
-	table.sort(gAllTheMapsDD, 
-		function(a, b)
-			return a.text < b.text
-		end
-	)	
-	table.sort(gAllTheMapsRA, 
-		function(a, b)
-			return a.text < b.text
-		end
-	)	
-		--removeEventHandler ( "onClientRender", getRootElement(), notInitialisedRender)
 
+		local sortFunc = function(a, b) return a.text < b.text	end
+		table.sort(gAllTheMapsDM, sortFunc)
+		table.sort(gAllTheMapsSH, sortFunc)
+		table.sort(gAllTheMapsDD, sortFunc)
+		table.sort(gAllTheMapsRA, sortFunc)
 	end
 )
-
-function notInitialisedRender()
-	dxDrawImage ( screenWidth/2-256, screenHeight/2-256, 512, 512, "files/loading.png" )
-end
 
 playerRankTable = {}
 

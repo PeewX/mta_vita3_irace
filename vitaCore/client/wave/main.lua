@@ -90,7 +90,7 @@ function showWave()
 		dxGridListReplaceRows(g_mapshop["map_list"], gAllTheMapsDD)
 	elseif getPlayerGameMode(getLocalPlayer()) == 3 then
 		dxGridListReplaceRows(g_mapshop["map_list"], gAllTheMapsRA)		
-	elseif getPlayerGameMode(getLocalPlayer()) == 5 then
+	elseif getPlayerGameMode(localPlayer) == GAMEMODES.DM or getPlayerGameMode(localPlayer) == GAMEMODES.TT then
 		dxGridListReplaceRows(g_mapshop["map_list"], gAllTheMapsDM)
 	end
 
