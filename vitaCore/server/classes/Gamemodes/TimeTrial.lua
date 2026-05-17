@@ -50,11 +50,8 @@ end
 function loadMapTT(mapname)
     local tt = TimeTrial:getSingleton()
     tt.m_NextMapname = mapname or "random"
-    if tt.m_CurrentMap then
-        tt:_endMap()
-    else
-        tt:_loadMap(tt.m_NextMapname)
-    end
+    if tt.m_CurrentMap then tt:_unloadMap() end
+    tt:_loadMap(tt.m_NextMapname)
 end
 
 -- Called by the admin panel via callServerFunction("killTTPlayer", player)
