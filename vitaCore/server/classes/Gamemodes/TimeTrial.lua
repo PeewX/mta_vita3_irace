@@ -427,7 +427,8 @@ end
 -- Destroy the player's vehicle and place them back at their spawn with a
 -- 3-2-1-GO countdown before releasing.
 function TimeTrial:_respawnPlayer(player)
-    if player:getData("AFK") then return end
+    if player.m_respawnCountdown then return end
+    player.m_respawnCountdown = true
     if self.m_CurrentMap then
         self.m_CurrentMap:onAttemptEnd(player)
     end
@@ -440,6 +441,8 @@ function TimeTrial:_respawnPlayer(player)
     if not spawn then return end
 
     player:setCameraTarget()
+    player:spawn(Vector3(spawn.x, spawn.y, spawn.z))
+    player:setDimension(self.m_GamemodeId)
 
     local veh = Vehicle(spawn.model, spawn.x, spawn.y, spawn.z, spawn.rx, spawn.ry, spawn.rz, "iRace")
     veh:setDimension(self.m_GamemodeId)
@@ -478,6 +481,7 @@ end
 function TimeTrial:_onCountdownDone(player)
     if not isElement(player) or not isInGamemode(player, self.m_GamemodeId) then return end
     if not self.m_CurrentMap or not self.m_CurrentMap:canRespawn(player) then return end
+    player.m_respawnCountdown = false
 
     local veh = getPlayerRaceVeh(player)
     if veh and isElement(veh) then
@@ -502,13 +506,6 @@ function TimeTrial:_onMapEnd()
             end
         end, 1000, 1)
     end)
-end
-
--- For symmetry with _onMapEnd; can be called by admin tools.
-function TimeTrial:_endMap()
-    if not self.m_CurrentMap then return end
-    self.m_Is_Running = false
-    self:_onMapEnd()
 end
 
 -- Displays "changing map in 5 … 1" via chat and calls onDone when finished.
