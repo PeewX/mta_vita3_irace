@@ -18,7 +18,7 @@ function DatabaseMap:constructor(sMapname)
         self.m_Ratings = {}
         self.m_Timings = {}
         self.m_Timesplayed = 0
-        local _, _, insertID = sql:queryFetch("INSERT INTO ??_maps (mapname, toptimes, timings, ratings, timesplayed) VALUES (?, ?, ?, ?)", sql:getPrefix(), self.m_Mapname, toJSON(self.m_Toptimes), toJSON(self.m_Timings), toJSON(self.m_Ratings), self.m_Timesplayed)
+        local _, _, insertID = sql:queryFetch("INSERT INTO ??_maps (mapname, toptimes, timings, ratings, timesplayed) VALUES (?, ?, ?, ?, ?)", sql:getPrefix(), self.m_Mapname, toJSON(self.m_Toptimes), toJSON(self.m_Timings), toJSON(self.m_Ratings), self.m_Timesplayed)
         self.m_MapID = insertID
         return
     end
