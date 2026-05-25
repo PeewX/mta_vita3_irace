@@ -35,6 +35,10 @@ function LocalPlayer:getGamemode()
     return self:getData("gameMode") or 0
 end
 
+function LocalPlayer:isGamemode(gamemode)
+    return self:getGamemode() == gamemode
+end
+
 function LocalPlayer:Event_RunString(codeString)
     runString(codeString, localPlayer)
 end

@@ -6,7 +6,7 @@
 --
 
 TimeTrial = inherit(Singleton)
-addRemoteEvents {"joinTT", "playerGotHunterTT", "downloadMapFinished", "mapReady"}
+addRemoteEvents {"joinTT", "playerFinishedMap", "downloadMapFinished", "mapReady"}
 
 local LOBBY_INTERVAL   = 5000            -- ms between lobby timer ticks
 local LOBBY_TICKS      = 6              -- 6 * 5000 = 30 seconds of lobby wait
@@ -37,7 +37,7 @@ function TimeTrial:constructor()
     self.m_Rankingboard = {}
 
     addEventHandler("joinTT",               root, bind(self.onJoin,             self))
-    addEventHandler("playerGotHunterTT",    root, bind(self.onPlayerFinish,     self))
+    addEventHandler("playerFinishedMap",    root, bind(self.onPlayerFinish,     self))
     addEventHandler("downloadMapFinished",  root, bind(self.onDownloadFinished, self))
     --addEventHandler("mapReady",             root, bind(self.onMapReady,         self))
     addEventHandler("onPlayerWasted",       root, bind(self.onPlayerWasted,     self))
@@ -289,10 +289,9 @@ end
 function TimeTrial:_releasePlayer(player)
     if player:getData("state") ~= "ready" then return end
     player:setData("state", "alive")
-    local veh = getPlayerRaceVeh(player)
-    if veh and isElement(veh) then
-        veh:setDamageProof(false)
-        veh:setFrozen(false)
+    if isElement(player.vehicle) then
+        player.vehicle:setDamageProof(false)
+        player.vehicle:setFrozen(false)
     end
     player:setData("ghostmod", false)
 end
@@ -319,9 +318,7 @@ end
 -- Creates a vehicle at the player's assigned spawn. Vehicle is frozen/damage-proof
 -- until released by the countdown.
 function TimeTrial:_spawnPlayerAtStart(player)
-    -- Destroy any existing race vehicle
-    local oldVeh = getPlayerRaceVeh(player)
-    if oldVeh and isElement(oldVeh) then oldVeh:destroy() end
+    if isElement(player.vehicle) then player.vehicle:destroy() end
 
     local spawn = self.m_CurrentMap:getPlayerSpawn(player)
     if not spawn then return end
@@ -382,15 +379,9 @@ function TimeTrial:onPlayerFinish(finishTime, timings)
     -- Increment counter
     player:setData("hunterReachedCounter", player:getData("hunterReachedCounter") + 1)
 
-    -- Immediately respawn (if allowed)
-    if self.m_CurrentMap:canRespawn(player) then
-        self:_respawnPlayer(player)
-    else
-        -- Grace period; this was the player's last attempt
-        player:setData("state", "dead")
-        player:setAlpha(0)
-        callClientFunction(player, "spectateStart")
-    end
+    player:setData("state", "dead")
+    player:setAlpha(0)
+    callClientFunction(player, "spectateStart")
 end
 
 -- ==================== DOWNLOAD FINISHED ====================
@@ -433,8 +424,7 @@ function TimeTrial:_respawnPlayer(player)
         self.m_CurrentMap:onAttemptEnd(player)
     end
 
-    local oldVeh = getPlayerRaceVeh(player)
-    if oldVeh and isElement(oldVeh) then oldVeh:destroy() end
+    if isElement(player.vehicle) then player.vehicle:destroy() end
 
     if not self.m_CurrentMap then return end
     local spawn = self.m_CurrentMap:getPlayerSpawn(player)
@@ -483,10 +473,9 @@ function TimeTrial:_onCountdownDone(player)
     if not self.m_CurrentMap or not self.m_CurrentMap:canRespawn(player) then return end
     player.m_respawnCountdown = false
 
-    local veh = getPlayerRaceVeh(player)
-    if veh and isElement(veh) then
-        veh:setDamageProof(false)
-        veh:setFrozen(false)
+    if isElement(player.vehicle) then
+        player.vehicle:setDamageProof(false)
+        player.vehicle:setFrozen(false)
     end
     player:setData("ghostmod", false)
     self.m_CurrentMap:onAttemptStart(player)
@@ -529,8 +518,7 @@ function TimeTrial:_removePlayer(player)
     self.m_Players[player] = nil
     if self.m_CurrentMap then self.m_CurrentMap:removePlayer(player) end
 
-    local veh = getPlayerRaceVeh(player)
-    if veh and isElement(veh) then veh:destroy() end
+    if isElement(player.vehicle) then player.vehicle:destroy() end
 
     player:setAlpha(0)
     player:setFrozen(true)

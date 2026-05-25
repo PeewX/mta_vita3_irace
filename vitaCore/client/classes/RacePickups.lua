@@ -33,7 +33,7 @@ end
 
 function RacePickup:onPickupHit(hitElement, matchingDimension)
     if not matchingDimension or hitElement.type ~= "vehicle" then return end
-    if not hitElement.controller == localPlayer then return end
+    if hitElement.controller ~= localPlayer then return end
 
     if self.m_Type == "repair" then
         hitElement:fix()
@@ -45,11 +45,10 @@ function RacePickup:onPickupHit(hitElement, matchingDimension)
     end
 
     if self.m_Type == "vehiclechange" then
-        -- Simulate network lag via timer, as some race maps depend on this behavior
-        -- The original race resource processes race pickups server-side, which introduces a delay proportional to the player's ping
-        setTimer(bind(self.changeVehicle, self), 50, 1, hitElement)
+        self:changeVehicle(hitElement)
     end
 
+    --triggerSeverEvent("onRacePickupHit") -- Add when serverside RacePickup class is rdy
     playSoundFrontEnd(46)
 end
 
@@ -57,33 +56,39 @@ function RacePickup:changeVehicle(hitElement)
     if not isElement(hitElement) then return end
     if hitElement.model == self.m_VehicleId then return end
 
-    self:alignVehicleUp(hitElement)
-    local oldDistance = hitElement.distanceFromCentreOfMassToBaseOfModel
+    if self.m_VehicleId == VEHICLES.HUNTER then
+        --Timings:getSingleton():hitPickup("Hunter", raceTime_passedTime)
+        --local timings = Timings:getSingleton():getTimings()
+        triggerServerEvent('playerFinishedMap', localPlayer, raceTime_passedTime, {})
+        if localPlayer:isGamemode(GAMEMODES.TT) then return end
+    end
+
+    local prevDistance = hitElement.distanceFromCentreOfMassToBaseOfModel
+    alignVehicleWithUp(hitElement)
+
+    local healthFix = false
+    if hitElement.vehicleType == "Plane" then
+        healthFix = hitElement:getHealth()
+    end
+
     hitElement:setModel(self.m_VehicleId)
+    if hitElement.vehicleType == "Helicopter" then
+        setVehicleRotorSpeed(hitElement, 0.2)
+    end
+
+    if healthFix then
+        hitElement:fix()
+        hitElement:setHealth(healthFix)
+    end
+
     local newDistance = hitElement.distanceFromCentreOfMassToBaseOfModel
-
-    if oldDistance and oldDistance < newDistance then
-        local newPosition = hitElement.matrix:transformPosition(Vector3(0, 0, -(oldDistance + newDistance)+1))
-        hitElement:setPosition(newPosition)
+    local zOffset = 1 -- (Default + 1 for classic vehicle change)
+    if prevDistance and newDistance > prevDistance then
+        zOffset = zOffset + (newDistance - prevDistance)
     end
 
+    hitElement:setPosition(hitElement.position + Vector3(0, 0, zOffset))
     triggerServerEvent('syncVehicleModel', localPlayer, self.m_VehicleId)
-end
-
-function RacePickup:alignVehicleUp(vehicle)
-    if not vehicle then return end
-
-    local matrix   = vehicle.matrix
-    local velocity = vehicle.velocity
-    local rotation = Vector3(0, 0, 0)
-
-    if velocity:getLength() > 0.05 and matrix:getUp().z < 0.001 then
-        rotation.z = 90 - math.deg(math.atan2(velocity.y, velocity.x))
-    else
-        rotation.z = matrix:getRotation().z
-    end
-
-    vehicle:setRotation(rotation)
 end
 
 function RacePickup.getAll()
