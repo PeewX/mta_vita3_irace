@@ -155,6 +155,10 @@ function Map:onAttemptEnd(player)
     end
 end
 
+function Map:isAttempt(player)
+    return self.m_PlayerActive[player]
+end
+
 -- Returns false during the grace period if the player already ended their last attempt.
 function Map:canRespawn(player)
     return not (self.m_Has_Ended and self.m_PlayerDoneAfterEnd[player])

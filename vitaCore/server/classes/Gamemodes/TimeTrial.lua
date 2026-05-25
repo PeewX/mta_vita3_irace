@@ -350,6 +350,7 @@ function TimeTrial:onPlayerFinish(finishTime, timings)
     if not player or not self.m_Players[player] then return end
     if not self.m_CurrentMap then return end
     if not finishTime then return end
+    if not self.m_CurrentMap:isAttempt(player) then return end
 
     -- Mark attempt as over
     self.m_CurrentMap:onAttemptEnd(player)
