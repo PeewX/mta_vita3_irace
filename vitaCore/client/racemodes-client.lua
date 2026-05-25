@@ -294,14 +294,14 @@ function onClientRender()
 	end	
 
 	
-	if guiGetVisible(g_GUI.timeleft) == true then
-		
+	if guiGetVisible(g_GUI.timeleft) == true and playerGamemode ~= GAMEMODES.TT then
+
 		if getElementData(gRaceModes[playerGamemode].realelement, "startTick") then
 			raceTime_duration = getElementData(gRaceModes[playerGamemode].realelement, "duration")
 			raceTime_passedTime = getTickCount()-raceTime_startTick
 			raceTime_leftTime = raceTime_duration - raceTime_passedTime
 			guiSetText(g_GUI.timeleft, msToTimeStr(raceTime_leftTime > 0 and raceTime_leftTime or 0))
-			
+
 			--if getElementData(getLocalPlayer(), "state") == "alive" then
 				guiSetText(g_GUI.timepassed, msToTimeStr(raceTime_passedTime))
 			--end
@@ -310,7 +310,7 @@ function onClientRender()
 			guiSetText(g_GUI.timeleft, msToTimeStr(raceTime_leftTime > 0 and raceTime_leftTime or 0))
 			guiSetText(g_GUI.timepassed, "00:00.000")
 		end
-		
+
 		if (showDeadAlive == 1) and screenWidth > 1024 and not isInGamemode(getLocalPlayer(), 3) then
 			local allPeople =  #getGamemodePlayers(playerGamemode)
 			local alivePeople = #getAliveGamemodePlayers(playerGamemode)

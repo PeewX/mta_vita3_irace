@@ -42,6 +42,10 @@ function Core:afterLogin()
     Sounds:new()
     SpawnPosition:new()
     Timings:new()
+    RaceTimer:new()
+
+    --Gamemodes
+    TimeTrial:new()
 end
 
 function Core:get(...)

@@ -187,6 +187,7 @@ function TimeTrial:_unloadMap()
     for player in pairs(self.m_Players) do
         player:setData("state", "dead")
         player:triggerEvent("stopMap")
+        player:triggerEvent("ttMapStopped")
         callClientFunction(player, "hideHurry")
     end
 end
@@ -276,10 +277,13 @@ function TimeTrial:_startGlobalCountdown(id)
         self.m_CurrentMap:startTimer()
         self.m_Element:setData("startTick", getTickCount())
 
+        local duration = self.m_CurrentMap:getDuration()
+        local timeLeft = self.m_CurrentMap:getTimerLeft()
+
         for player in pairs(self.m_Players) do
-            callClientFunction(player, "showGUIComponents", "timeleft", "timepassed")
             if player:getData("state") == "alive" then
                 self.m_CurrentMap:onAttemptStart(player)
+                player:triggerEvent("ttMapStarted", duration, timeLeft)
             end
         end
     end
@@ -349,6 +353,7 @@ function TimeTrial:onPlayerFinish(finishTime, timings)
 
     -- Mark attempt as over
     self.m_CurrentMap:onAttemptEnd(player)
+    player:triggerEvent("ttAttemptFinished")
 
     -- Record toptime
     local improved, hadToptime = self.m_CurrentMap:recordFinish(player, finishTime, timings)
@@ -371,15 +376,13 @@ function TimeTrial:onPlayerFinish(finishTime, timings)
     -- Points for finishing
     if not self:_hasFinished(player) then
         player:setData("Points", player:getData("Points") + 50)
+        player:setData("hunterReachedCounter", player:getData("hunterReachedCounter") + 1)
         outputChatBox("#996633:Points: #ffffff You received 50 points for finishing the map.", player, 255, 255, 255, true)
         addPlayerArchivement(player, 9)
     end
 
     -- Add to ranking board
     self:_addRankingEntry(player, finishTime)
-
-    -- Increment counter
-    player:setData("hunterReachedCounter", player:getData("hunterReachedCounter") + 1)
 
     player:setData("state", "dead")
     player:setAlpha(0)
@@ -447,6 +450,7 @@ function TimeTrial:_respawnPlayer(player)
     player:setData("ghostmod", true)
     player:setAlpha(255)
 
+    player:triggerEvent("ttAttemptFinished")
     self:_runPlayerCountdown(player, bind(self._onCountdownDone, self, player))
 end
 
@@ -481,6 +485,10 @@ function TimeTrial:_onCountdownDone(player)
     end
     player:setData("ghostmod", false)
     self.m_CurrentMap:onAttemptStart(player)
+
+    local duration = self.m_CurrentMap:getDuration()
+    local timeLeft = self.m_CurrentMap:getTimerLeft()
+    player:triggerEvent("ttAttemptStarted", duration, timeLeft)
 end
 
 -- ==================== MAP END ====================

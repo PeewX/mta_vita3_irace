@@ -95,6 +95,10 @@ function Map:_checkGraceEnd()
     self.m_OnEndCallback()
 end
 
+function Map:getDuration()
+    return MAP_DURATION
+end
+
 function Map:getTimerLeft()
     if not self.m_MapTimer or not isTimer(self.m_MapTimer) then return 0 end
     local timeLeft = getTimerDetails(self.m_MapTimer)
