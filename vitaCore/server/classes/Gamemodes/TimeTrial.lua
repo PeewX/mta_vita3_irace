@@ -369,9 +369,11 @@ function TimeTrial:onPlayerFinish(finishTime, timings)
     end
 
     -- Points for finishing
-    player:setData("Points", player:getData("Points") + 50)
-    outputChatBox("#996633:Points: #ffffff You received 50 points for finishing the map.", player, 255, 255, 255, true)
-    addPlayerArchivement(player, 9)
+    if not self:_hasFinished(player) then
+        player:setData("Points", player:getData("Points") + 50)
+        outputChatBox("#996633:Points: #ffffff You received 50 points for finishing the map.", player, 255, 255, 255, true)
+        addPlayerArchivement(player, 9)
+    end
 
     -- Add to ranking board
     self:_addRankingEntry(player, finishTime)
@@ -489,11 +491,7 @@ function TimeTrial:_onMapEnd()
     self.m_Is_Running = false
     self:_showMapChangeCountdown(5, function()
         self:_unloadMap()
-        setTimer(function()
-            if table.size(self.m_Players) > 0 then
-                self:_loadMap(self.m_NextMapname)
-            end
-        end, 1000, 1)
+        setTimer(function() if table.size(self.m_Players) > 0 then self:_loadMap(self.m_NextMapname) end end, 1000, 1)
     end)
 end
 
@@ -506,9 +504,23 @@ end
 
 -- ==================== RANKING ====================
 
+function TimeTrial:_hasFinished(player)
+    for i, data in pairs(self.m_Rankingboard) do
+        if data.ply == player then return i end
+    end
+end
+
 function TimeTrial:_addRankingEntry(player, finishTime)
-    local entry = {text = ("%s#FFFFFF: %s"):format(_getPlayerName(player), msToTimeStr(finishTime)), ply  = player}
-    table.insert(self.m_Rankingboard, entry)
+    local entry = {text = ("%s#FFFFFF: %s"):format(_getPlayerName(player), msToTimeStr(finishTime)), time = finishTime, ply = player}
+    local entryIndex = self:_hasFinished(player)
+    if entryIndex then
+        if self.m_Rankingboard[entryIndex].time < finishTime then return end
+        self.m_Rankingboard[entryIndex] = entry
+    else
+        table.insert(self.m_Rankingboard, entry)
+    end
+
+   table.sort(self.m_Rankingboard, function(a, b) return a.time < b.time end)
     self.m_Element:setData("rankingboard", self.m_Rankingboard)
 end
 
