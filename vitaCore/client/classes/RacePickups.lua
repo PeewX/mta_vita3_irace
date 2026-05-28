@@ -59,6 +59,7 @@ function RacePickup:changeVehicle(hitElement)
     if self.m_VehicleId == VEHICLES.HUNTER then
         --Timings:getSingleton():hitPickup("Hunter", RaceTimer:getSingleton():getPassedTime())
         --local timings = Timings:getSingleton():getTimings()
+        RaceTimer:getSingleton():finishAttempt()
         triggerServerEvent('playerFinishedMap', localPlayer, RaceTimer:getSingleton():getPassedTime(), {})
         if localPlayer:isGamemode(GAMEMODES.TT) then return end
     end

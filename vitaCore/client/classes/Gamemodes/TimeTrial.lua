@@ -5,36 +5,44 @@
 -- pewx.de // iRace-mta.de // mtasa.de
 --
 TimeTrial = inherit(Singleton)
-addRemoteEvents{"ttMapStarted", "ttAttemptStarted", "ttAttemptFinished", "ttMapStopped"}
+addRemoteEvents{"ttMapStarted", "ttAttemptStarted", "ttAttemptFinished", "ttMapStopped", "ttAttemptStart"}
 
 function TimeTrial:constructor()
+    self.m_Countdown   = Countdown:new()
     self.m_TimerWidget = TimerWidget:new()
 
-    self.fn_onMapStarted     = bind(self.onMapStarted,     self)
-    self.fn_onAttemptStarted = bind(self.onAttemptStarted, self)
-    self.fn_onMapStopped     = bind(self.onMapStopped,     self)
+    self.m_Countdown:setHook(bind(self.onCountdownFinished, self))
 
-    addEventHandler("ttMapStarted",     localPlayer, bind(self.onMapStarted, self))
-    addEventHandler("ttAttemptStarted", localPlayer, bind(self.onAttemptStarted, self))
-    addEventHandler("ttAttemptFinished",   localPlayer, bind(self.onAttemptFinished, self))
-    addEventHandler("ttMapStopped",     localPlayer, bind(self.onMapStopped, self))
+    addEventHandler("ttMapStarted",      localPlayer, bind(self.onMapStarted,      self))
+    addEventHandler("ttAttemptStart",    localPlayer, bind(self.onAttemptStart, self))
+    addEventHandler("ttAttemptFinished", localPlayer, bind(self.onAttemptFinished, self))
+    addEventHandler("ttMapStopped",      localPlayer, bind(self.onMapStopped,      self))
 end
 
 function TimeTrial:onMapStarted(duration, timeLeft)
     RaceTimer:getSingleton():startMap(duration, timeLeft)
     self.m_TimerWidget:show()
+    playSound("files/audio/countstart.mp3")
 end
 
--- Fired after each respawn (and late-join) countdown.
-function TimeTrial:onAttemptStarted(duration, timeLeft)
-    RaceTimer:getSingleton():startAttempt(duration, timeLeft)
+function TimeTrial:onAttemptStart()
+    self.m_Countdown:start()
+end
+
+function TimeTrial:onCountdownFinished()
+    if not localPlayer.vehicle then return end
+    localPlayer.vehicle:setFrozen(false)
+    RaceTimer:getSingleton():startAttempt()
+    triggerServerEvent("playerAttemptStarted", localPlayer)
 end
 
 function TimeTrial:onAttemptFinished()
+    self.m_Countdown:stop()
     RaceTimer:getSingleton():finishAttempt()
 end
 
 function TimeTrial:onMapStopped()
+    self.m_Countdown:stop()
     self.m_TimerWidget:hide()
 end
 

@@ -6,7 +6,7 @@
 --
 
 TimeTrial = inherit(Singleton)
-addRemoteEvents {"joinTT", "playerFinishedMap", "downloadMapFinished", "mapReady"}
+addRemoteEvents {"joinTT", "playerFinishedMap", "downloadMapFinished", "mapReady", "playerAttemptStarted"}
 
 local LOBBY_INTERVAL   = 5000            -- ms between lobby timer ticks
 local LOBBY_TICKS      = 6              -- 6 * 5000 = 30 seconds of lobby wait
@@ -37,6 +37,7 @@ function TimeTrial:constructor()
     self.m_Rankingboard = {}
 
     addEventHandler("joinTT",               root, bind(self.onJoin,             self))
+    addEventHandler("playerAttemptStarted",   root, bind(self.onPlayerAttemptStarted, self))
     addEventHandler("playerFinishedMap",    root, bind(self.onPlayerFinish,     self))
     addEventHandler("downloadMapFinished",  root, bind(self.onDownloadFinished, self))
     --addEventHandler("mapReady",             root, bind(self.onMapReady,         self))
@@ -95,7 +96,7 @@ function TimeTrial:onJoin()
         if self.m_Is_Running then
             -- Late join during an active map: start them with a countdown
             self:_spawnPlayerAtStart(player)
-            self:_runPlayerCountdown(player, bind(self._onCountdownDone, self, player))
+            self:_runPlayerCountdown(player)
         end
     end
 end
@@ -106,6 +107,9 @@ function TimeTrial:onQuit(client)
 
     self:_removePlayer(player)
     self:_resetPlayerState(player)
+
+    player:triggerEvent("stopMap")
+    player:triggerEvent("ttMapStopped")
 
     outputChatBoxToGamemode(("#FF6666:QUIT: #FFFFFF%s#FFFFFF has left the gamemode."):format(player:getName()), self.m_GamemodeId, 255, 255, 255, true)
 
@@ -225,79 +229,39 @@ function TimeTrial:_onLobbyTick()
             killTimer(self.m_LobbyTimer)
             self.m_LobbyTimer = false
         end
-        self:_startGlobalCountdown(4)
+        self:_startGlobalCountdown()
     end
 end
 
--- ==================== GLOBAL START COUNTDOWN (4-3-2-1-0) ====================
+-- ==================== GLOBAL START COUNTDOWN ====================
 
-function TimeTrial:_startGlobalCountdown(id)
+function TimeTrial:_startGlobalCountdown()
     local players = getGamemodePlayers(self.m_GamemodeId)
-
-    for _, p in pairs(players) do
-        if isPlayerAlive(p) then
-            local x, y, z = p:getPosition()
-            callClientFunction(p, "countdownClientFunc", id)
-
-            if id == 4 then
-                callClientFunction(p, "playSound", "files/audio/countstart.mp3")
-                if p:getData("mapCamera") then fadeCamera(p, false, 1, 0, 0, 0) end
-            elseif id == 3 then
-                callClientFunction(p, "playSound", "files/audio/3.mp3")
-                if p:getData("mapCamera") then
-                    setCameraMatrix(p, x+10, y+7, z+3, x, y, z)
-                    fadeCamera(p, true, 0, 0, 0, 0)
-                end
-            elseif id == 2 then
-                callClientFunction(p, "playSound", "files/audio/2.mp3")
-                if p:getData("mapCamera") then setCameraMatrix(p, x+4, y-1, z+2, x, y, z) end
-            elseif id == 1 then
-                callClientFunction(p, "playSound", "files/audio/1.mp3")
-                if p:getData("mapCamera") then setCameraMatrix(p, x, y, z+15, x, y, z) end
-            elseif id == 0 then
-                callClientFunction(p, "playSound", "files/audio/0.mp3")
-                if p:getData("mapCamera") then setCameraTarget(p, p) end
-                self:_releasePlayer(p)
-            end
+    for _, player in pairs(players) do
+        if isPlayerAlive(player) then
+            local duration = self.m_CurrentMap:getDuration()
+            local timeLeft = self.m_CurrentMap:getTimerLeft()
+            player:triggerEvent("ttMapStarted", duration, timeLeft)
         end
     end
 
-    if id == 4 then
-        self.m_CountdownTimer = setTimer(bind(self._startGlobalCountdown, self), 3000, 1, 3)
-    elseif id == 3 then
-        self.m_CountdownTimer = setTimer(bind(self._startGlobalCountdown, self), 1000, 1, 2)
-    elseif id == 2 then
-        self.m_CountdownTimer = setTimer(bind(self._startGlobalCountdown, self), 1000, 1, 1)
-    elseif id == 1 then
-        self.m_CountdownTimer = setTimer(bind(self._startGlobalCountdown, self), 1000, 1, 0)
-    elseif id == 0 then
+    -- Wait for the sound intro, then start the map and trigger client countdowns
+    self.m_CountdownTimer = setTimer(function()
         self.m_CountdownTimer = false
-        self.m_Is_Running     = true
-
+        self.m_Is_Running = true
         self.m_CurrentMap:startTimer()
         self.m_Element:setData("startTick", getTickCount())
 
-        local duration = self.m_CurrentMap:getDuration()
-        local timeLeft = self.m_CurrentMap:getTimerLeft()
-
         for player in pairs(self.m_Players) do
-            if player:getData("state") == "alive" then
-                self.m_CurrentMap:onAttemptStart(player)
-                player:triggerEvent("ttMapStarted", duration, timeLeft)
+            if player:getData("state") == "not ready" or player:getData("state") == "ready" then
+                player:setData("state", "alive")
+            end
+
+            if isPlayerAlive(player) then
+                player:triggerEvent("ttAttemptStart")
             end
         end
-    end
-end
-
--- Called at countdown=0 to unfreeze a player who was "ready".
-function TimeTrial:_releasePlayer(player)
-    if player:getData("state") ~= "ready" then return end
-    player:setData("state", "alive")
-    if isElement(player.vehicle) then
-        player.vehicle:setDamageProof(false)
-        player.vehicle:setFrozen(false)
-    end
-    player:setData("ghostmod", false)
+    end, 3000, 1)
 end
 
 -- ==================== PLAYER SETUP / SPAWN ====================
@@ -313,6 +277,10 @@ function TimeTrial:_setupPlayer(player)
 
     self.m_CurrentMap:assignSpawn(player)
     self:_spawnPlayerAtStart(player)
+
+    local spawns   = self.m_CurrentMap:getSpawns()
+    local spawnIdx = self.m_CurrentMap:getPlayerSpawnIndex(player)
+    player:triggerEvent("updateSpawnPositions", spawns, spawnIdx, self.m_CurrentMap:getName())
 
     player:setData("mapname", self.m_CurrentMap:getName())
     player:setData("nextmap", self.m_NextMapname)
@@ -399,8 +367,6 @@ function TimeTrial:onDownloadFinished()
 
     self.m_CurrentMap:sendToptimes(player)
     callClientFunction(player, "forceToptimesOpen")
-    callClientFunction(player, "allowNewHurryFunc")
-    callClientFunction(player, "showGUIComponents", "timeleft", "timepassed")
 
     if not self.m_Is_Running then
         player:setData("state", "ready")
@@ -408,15 +374,16 @@ function TimeTrial:onDownloadFinished()
     end
 
     -- Late join during a running map
+    local duration = self.m_CurrentMap:getDuration()
     local timeLeft = self.m_CurrentMap:getTimerLeft()
-    callClientFunction(player, "setStartTickLater", timeLeft)
+    player:triggerEvent("ttMapStarted", duration, timeLeft)
 
     -- Make sure spawn is assigned and vehicle exists
     if not self.m_CurrentMap.m_PlayerSpawns[player] then
         self.m_CurrentMap:assignSpawn(player)
     end
     self:_spawnPlayerAtStart(player)
-    self:_runPlayerCountdown(player, bind(self._onCountdownDone, self, player))
+    self:_runPlayerCountdown(player)
 end
 
 -- ==================== RESPAWN ====================
@@ -452,44 +419,32 @@ function TimeTrial:_respawnPlayer(player)
     player:setAlpha(255)
 
     player:triggerEvent("ttAttemptFinished")
-    self:_runPlayerCountdown(player, bind(self._onCountdownDone, self, player))
+    self:_runPlayerCountdown(player)
 end
 
--- Individual 3-2-1-GO countdown for a single player.
--- Calls onDone() after the "GO" beat.
-function TimeTrial:_runPlayerCountdown(player, onDone)
-    local steps = {3, 2, 1, 0}
-    local function step(i)
-        if not isElement(player) or not isInGamemode(player, self.m_GamemodeId) then return end
-        if not self.m_Is_Running then return end
-        local id = steps[i]
-        callClientFunction(player, "countdownClientFunc", id)
-        callClientFunction(player, "playSound", ("files/audio/%d.mp3"):format(id))
-        if id == 0 then
-            onDone()
-        else
-            setTimer(function() step(i + 1) end, 1000, 1)
-        end
-    end
-    step(1)
-end
-
--- Called after a per-player countdown finishes.
-function TimeTrial:_onCountdownDone(player)
+function TimeTrial:_runPlayerCountdown(player)
     if not isElement(player) or not isInGamemode(player, self.m_GamemodeId) then return end
-    if not self.m_CurrentMap or not self.m_CurrentMap:canRespawn(player) then return end
-    player.m_respawnCountdown = false
+    player:triggerEvent("ttAttemptStart")
+end
+
+-- Called when the client reports that it has unfrozen its own vehicle at GO.
+-- Syncs ghost-mode off, damage-proof off, and starts the attempt timer.
+function TimeTrial:onPlayerAttemptStarted()
+    local player = client
+    if not self.m_Players[player] then return end
+    if not self.m_CurrentMap then return end
 
     if isElement(player.vehicle) then
         player.vehicle:setDamageProof(false)
-        player.vehicle:setFrozen(false)
+        player.vehicle:setFrozen(false)   -- ensure server-side sync (MTA #442)
+        player:setData("ghostmod", false)
     end
-    player:setData("ghostmod", false)
-    self.m_CurrentMap:onAttemptStart(player)
 
-    local duration = self.m_CurrentMap:getDuration()
-    local timeLeft = self.m_CurrentMap:getTimerLeft()
-    player:triggerEvent("ttAttemptStarted", duration, timeLeft)
+    if not self.m_CurrentMap:isAttempt(player) then
+        player.m_respawnCountdown = false
+        if not self.m_CurrentMap:canRespawn(player) then return end
+        self.m_CurrentMap:onAttemptStart(player)
+    end
 end
 
 -- ==================== MAP END ====================

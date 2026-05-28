@@ -17,17 +17,16 @@ function RaceTimer:startMap(duration, timeLeft)
     self.m_Duration         = duration
     self.m_MapStartTick     = getTickCount() - (duration - timeLeft)
     self.m_AttemptStartTick = getTickCount()
+    self.m_Finished         = getTickCount()
 end
 
--- Called after each respawn countdown. timeLeft is the remaining map time
-function RaceTimer:startAttempt(duration, timeLeft)
-    self.m_Duration         = duration
-    self.m_MapStartTick     = getTickCount() - (duration - timeLeft)
+function RaceTimer:startAttempt()
     self.m_AttemptStartTick = getTickCount()
     self.m_Finished         = nil
 end
 
 function RaceTimer:finishAttempt()
+    if self.m_Finished then return end
     self.m_Finished = getTickCount()
 end
 
