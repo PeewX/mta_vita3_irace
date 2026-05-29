@@ -110,6 +110,7 @@ function TimeTrial:onQuit(client)
 
     player:triggerEvent("stopMap")
     player:triggerEvent("ttMapStopped")
+    player:triggerEvent("onMapSoundStop")
 
     outputChatBoxToGamemode(("#FF6666:QUIT: #FFFFFF%s#FFFFFF has left the gamemode."):format(player:getName()), self.m_GamemodeId, 255, 255, 255, true)
 
@@ -192,7 +193,7 @@ function TimeTrial:_unloadMap()
         player:setData("state", "dead")
         player:triggerEvent("stopMap")
         player:triggerEvent("ttMapStopped")
-        callClientFunction(player, "hideHurry")
+        player:triggerEvent("onMapSoundStop")
     end
 end
 
@@ -253,10 +254,6 @@ function TimeTrial:_startGlobalCountdown()
         self.m_Element:setData("startTick", getTickCount())
 
         for player in pairs(self.m_Players) do
-            if player:getData("state") == "not ready" or player:getData("state") == "ready" then
-                player:setData("state", "alive")
-            end
-
             if isPlayerAlive(player) then
                 player:triggerEvent("ttAttemptStart")
             end
@@ -414,7 +411,7 @@ function TimeTrial:_respawnPlayer(player)
     player:warpIntoVehicle(veh)
     veh:setData("isTTVeh",    true)
     player:setData("raceVeh",  veh)
-    player:setData("state",    "alive")
+    player:setData("state",    "ready")
     player:setData("ghostmod", true)
     player:setAlpha(255)
 
@@ -439,6 +436,8 @@ function TimeTrial:onPlayerAttemptStarted()
         player.vehicle:setFrozen(false)   -- ensure server-side sync (MTA #442)
         player:setData("ghostmod", false)
     end
+
+    player:setData("state", "alive")
 
     if not self.m_CurrentMap:isAttempt(player) then
         player.m_respawnCountdown = false

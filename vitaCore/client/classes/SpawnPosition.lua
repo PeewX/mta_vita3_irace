@@ -64,21 +64,20 @@ function SpawnPosition:updateSpawnPositions(positions, spawnId, map)
             self.m_Index = savedIndex
 
             local spawn = self.m_SpawnPositions[savedIndex]
-            localPlayer.vehicle:setPosition(spawn.posX, spawn.posY, spawn.posZ)
-            localPlayer.vehicle:setRotation(spawn.rotX, spawn.rotY, spawn.rotZ)
+            localPlayer.vehicle:setPosition(spawn.posX or spawn.x, spawn.posY or spawn.y, spawn.posZ or spawn.z)
+            localPlayer.vehicle:setRotation(spawn.rotX or spawn.rx, spawn.rotY or spawn.ry, spawn.rotZ or spawn.rz)
             setCameraTarget(localPlayer)
         end
     end
 end
 
 function SpawnPosition:mouseWheel(button)
-    if not self.m_Enabled  then return end
+    if not self.m_Enabled then return end
     if button ~= "mouse_wheel_up" and button ~= "mouse_wheel_down" then return end
     if not localPlayer.vehicle then return end
     if localPlayer:getData("state") ~= "not ready" and localPlayer:getData("state") ~= "ready" then return end
 
     local int = button == "mouse_wheel_up" and 1 or -1
-
 
     self.m_Index = self.m_Index + int
     if self.m_Index < 1 then self.m_Index = #self.m_SpawnPositions end
@@ -90,8 +89,8 @@ function SpawnPosition:mouseWheel(button)
     end
 
     local spawn = self.m_SpawnPositions[self.m_Index]
-    localPlayer.vehicle:setPosition(spawn.posX, spawn.posY, spawn.posZ)
-    localPlayer.vehicle:setRotation(spawn.rotX, spawn.rotY, spawn.rotZ)
+    localPlayer.vehicle:setPosition(spawn.posX or spawn.x, spawn.posY or spawn.y, spawn.posZ or spawn.z)
+    localPlayer.vehicle:setRotation(spawn.rotX or spawn.rx, spawn.rotY or spawn.ry, spawn.rotZ or spawn.rz)
     setCameraTarget(localPlayer)
     playSound("files/audio/swosh.mp3")
 end

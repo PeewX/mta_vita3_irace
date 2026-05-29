@@ -55,6 +55,7 @@ function()
 	setPlayerHudComponentVisible("radar", false)
 	if rotorr ~= 360 then rotorr = rotorr+5 else rotorr = 1 end	
 
+	if not lp then return end
 	local px, py, pz = getElementPosition(lp)
     local pr = getPedRotation(lp)
     local cx,cy,_,tx,ty = getCameraMatrix()

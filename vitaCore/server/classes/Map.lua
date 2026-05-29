@@ -138,6 +138,14 @@ function Map:getPlayerSpawn(player)
     return self.m_SpawnPositions[idx] or self.m_SpawnPositions[1]
 end
 
+function Map:getPlayerSpawnIndex(player)
+    return self.m_PlayerSpawns[player] or 1
+end
+
+function Map:getSpawns()
+    return self.m_SpawnPositions
+end
+
 -- ==================== ATTEMPT TRACKING ====================
 
 -- Call when a player leaves the start line (countdown reaches GO).
