@@ -5,7 +5,7 @@
 -- pewx.de // iRace-mta.de // mtasa.de
 --
 TimeTrial = inherit(Singleton)
-addRemoteEvents{"ttMapStarted", "ttAttemptStarted", "ttAttemptFinished", "ttMapStopped", "ttAttemptStart"}
+addRemoteEvents{"ttMapStart", "ttUpdateMapTime", "ttAttemptStarted", "ttAttemptFinished", "ttMapStopped", "ttAttemptStart"}
 
 function TimeTrial:constructor()
     self.m_Countdown   = Countdown:new()
@@ -13,16 +13,21 @@ function TimeTrial:constructor()
 
     self.m_Countdown:setHook(bind(self.onCountdownFinished, self))
 
-    addEventHandler("ttMapStarted",      localPlayer, bind(self.onMapStarted,      self))
-    addEventHandler("ttAttemptStart",    localPlayer, bind(self.onAttemptStart, self))
+    addEventHandler("ttMapStart",        localPlayer, bind(self.onMapStart,        self))
+    addEventHandler("ttUpdateMapTime",   localPlayer, bind(self.onUpdateMapTime,   self))
+    addEventHandler("ttAttemptStart",    localPlayer, bind(self.onAttemptStart,    self))
     addEventHandler("ttAttemptFinished", localPlayer, bind(self.onAttemptFinished, self))
     addEventHandler("ttMapStopped",      localPlayer, bind(self.onMapStopped,      self))
 end
 
-function TimeTrial:onMapStarted(duration, timeLeft)
-    RaceTimer:getSingleton():startMap(duration, timeLeft)
+function TimeTrial:onMapStart(duration)
+    RaceTimer:getSingleton():init(duration)
     self.m_TimerWidget:show()
     playSound("files/audio/countstart.mp3")
+end
+
+function TimeTrial:onUpdateMapTime(duration, timeLeft)
+    RaceTimer:getSingleton():updateMapTime(duration, timeLeft)
 end
 
 function TimeTrial:onAttemptStart()

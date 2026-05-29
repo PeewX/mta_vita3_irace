@@ -12,12 +12,16 @@ function RaceTimer:constructor()
     self.m_Duration         = nil
 end
 
--- Called at GO (initial start). timeLeft is the remaining map duration in ms reported by the server
-function RaceTimer:startMap(duration, timeLeft)
+function RaceTimer:init(duration)
     self.m_Duration         = duration
-    self.m_MapStartTick     = getTickCount() - (duration - timeLeft)
+    self.m_MapStartTick     = false
     self.m_AttemptStartTick = getTickCount()
     self.m_Finished         = getTickCount()
+end
+
+function RaceTimer:updateMapTime(duration, timeLeft)
+    self.m_Duration     = duration
+    self.m_MapStartTick = getTickCount() - (duration - timeLeft)
 end
 
 function RaceTimer:startAttempt()
@@ -30,15 +34,14 @@ function RaceTimer:finishAttempt()
     self.m_Finished = getTickCount()
 end
 
--- Elapsed ms since the current attempt started, or nil if not running.
 function RaceTimer:getPassedTime()
     if not self.m_AttemptStartTick then return nil end
     return (self.m_Finished or getTickCount()) - self.m_AttemptStartTick
 end
 
--- Remaining ms of the map countdown, or nil if map not started.
 function RaceTimer:getTimeLeft()
-    if not self.m_MapStartTick or not self.m_Duration then return nil end
+    if not self.m_Duration then return false end
+    if self.m_Duration and not self.m_MapStartTick then return self.m_Duration end
     local left = self.m_Duration - (getTickCount() - self.m_MapStartTick)
     return left > 0 and left or 0
 end

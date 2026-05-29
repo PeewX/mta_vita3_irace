@@ -30,8 +30,6 @@ function TimeTrial:constructor()
 
     self.m_Players        = {}   -- [player] = true
     self.m_Is_Running     = false
-    self.m_LobbyTimer     = false
-    self.m_CountdownTimer = false
 
     -- Ranking board (parallel to DM; kept as element data for the client HUD)
     self.m_Rankingboard = {}
@@ -166,14 +164,9 @@ end
 
 function TimeTrial:_unloadMap()
     outputServerLog("Unloading map: " .. self.m_CurrentMap:getName())
-    if self.m_LobbyTimer and isTimer(self.m_LobbyTimer) then
-        killTimer(self.m_LobbyTimer)
-        self.m_LobbyTimer = false
-    end
-    if self.m_CountdownTimer and isTimer(self.m_CountdownTimer) then
-        killTimer(self.m_CountdownTimer)
-        self.m_CountdownTimer = false
-    end
+    if isTimer(self.m_LobbyTimer) then killTimer(self.m_LobbyTimer) end
+    if isTimer(self.m_CountdownTimer) then killTimer(self.m_CountdownTimer) end
+    if isTimer(self.m_CountdownDoneTimer) then killTimer(self.m_CountdownDoneTimer) end
 
     self.m_Is_Running = false
 
@@ -228,7 +221,6 @@ function TimeTrial:_onLobbyTick()
     if remaining == 1 or (#players > 0 and readyCount / #players >= 0.8) then
         if isTimer(self.m_LobbyTimer) then
             killTimer(self.m_LobbyTimer)
-            self.m_LobbyTimer = false
         end
         self:_startGlobalCountdown()
     end
@@ -237,27 +229,33 @@ end
 -- ==================== GLOBAL START COUNTDOWN ====================
 
 function TimeTrial:_startGlobalCountdown()
+    local duration = self.m_CurrentMap:getDuration()
     local players = getGamemodePlayers(self.m_GamemodeId)
     for _, player in pairs(players) do
         if isPlayerAlive(player) then
-            local duration = self.m_CurrentMap:getDuration()
-            local timeLeft = self.m_CurrentMap:getTimerLeft()
-            player:triggerEvent("ttMapStarted", duration, timeLeft)
+            player:triggerEvent("ttMapStart", duration)
         end
     end
 
     -- Wait for the sound intro, then start the map and trigger client countdowns
     self.m_CountdownTimer = setTimer(function()
-        self.m_CountdownTimer = false
-        self.m_Is_Running = true
-        self.m_CurrentMap:startTimer()
-        self.m_Element:setData("startTick", getTickCount())
-
         for player in pairs(self.m_Players) do
             if isPlayerAlive(player) then
                 player:triggerEvent("ttAttemptStart")
             end
         end
+
+        self.m_CountdownDoneTimer = setTimer(function()
+            self.m_Is_Running = true
+            self.m_CurrentMap:startTimer()
+
+            local timeLeft = self.m_CurrentMap:getTimerLeft()
+            for player in pairs(self.m_Players) do
+                if isPlayerAlive(player) then
+                    player:triggerEvent("ttUpdateMapTime", duration, timeLeft)
+                end
+            end
+        end, 3000, 1)
     end, 3000, 1)
 end
 
