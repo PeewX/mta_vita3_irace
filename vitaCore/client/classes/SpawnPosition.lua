@@ -7,17 +7,16 @@
 SpawnPosition = inherit(Singleton)
 SpawnPosition.file = ":vitaCore/files/spawns.json"
 
-addRemoteEvents{"updateSpawnPositions"}
+addRemoteEvents{"updateSpawnPositions", "updateSpawnPositionOnRespawn"}
 
 function SpawnPosition:constructor()
     self:loadSpawns()
     self.m_Enabled = false
     self.m_Index = 0
 
-    self.fn_SpawnPositions = bind(self.updateSpawnPositions, self)
-    self.fn_OnClientMouseWheel = bind(self.mouseWheel, self)
-    addEventHandler("updateSpawnPositions", localPlayer, self.fn_SpawnPositions)
-    addEventHandler("onClientKey", root, self.fn_OnClientMouseWheel)
+    addEventHandler("updateSpawnPositions", localPlayer, bind(self.updateSpawnPositions, self))
+    addEventHandler("updateSpawnPositionOnRespawn", localPlayer, bind(self.assignSpawn, self))
+    addEventHandler("onClientKey", root, bind(self.mouseWheel, self))
 end
 
 function SpawnPosition:loadSpawns()
@@ -56,7 +55,11 @@ function SpawnPosition:updateSpawnPositions(positions, spawnId, map)
     self.m_Map = md5(map)
     self.m_Enabled = true
 
-    if not localPlayer.vehicle then outputChatBox("no vehicle :C") return end
+    self:assignSpawn()
+end
+
+function SpawnPosition:assignSpawn()
+    if not localPlayer.vehicle then return end
 
     if self.m_localSpawns[self.m_Map] then
         local savedIndex = self.m_localSpawns[self.m_Map]
@@ -91,6 +94,6 @@ function SpawnPosition:mouseWheel(button)
     local spawn = self.m_SpawnPositions[self.m_Index]
     localPlayer.vehicle:setPosition(spawn.posX or spawn.x, spawn.posY or spawn.y, spawn.posZ or spawn.z)
     localPlayer.vehicle:setRotation(spawn.rotX or spawn.rx, spawn.rotY or spawn.ry, spawn.rotZ or spawn.rz)
-    setCameraTarget(localPlayer)
+    --setCameraTarget(localPlayer)
     playSound("files/audio/swosh.mp3")
 end

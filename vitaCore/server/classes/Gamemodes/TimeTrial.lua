@@ -385,14 +385,14 @@ end
 
 -- ==================== RESPAWN ====================
 
--- Destroy the player's vehicle and place them back at their spawn with a
--- 3-2-1-GO countdown before releasing.
 function TimeTrial:_respawnPlayer(player)
     if player.m_respawnCountdown then return end
     player.m_respawnCountdown = true
     if self.m_CurrentMap then
         self.m_CurrentMap:onAttemptEnd(player)
     end
+
+    player:triggerEvent("ttAttemptFinished")
 
     if isElement(player.vehicle) then player.vehicle:destroy() end
 
@@ -415,7 +415,7 @@ function TimeTrial:_respawnPlayer(player)
     player:setData("ghostmod", true)
     player:setAlpha(255)
 
-    player:triggerEvent("ttAttemptFinished")
+    player:triggerEvent("updateSpawnPositionOnRespawn")
     self:_runPlayerCountdown(player)
 end
 
@@ -433,7 +433,7 @@ function TimeTrial:onPlayerAttemptStarted()
 
     if isElement(player.vehicle) then
         player.vehicle:setDamageProof(false)
-        player.vehicle:setFrozen(false)   -- ensure server-side sync (MTA #442)
+        player.vehicle:setFrozen(false)   -- ensure server-side sync (MTA issue #442)
         player:setData("ghostmod", false)
     end
 
