@@ -3,6 +3,24 @@ MovementRecorder = inherit(Object)
 local POSITION_DELTA_THRESHOLD = 0.05
 local ROTATION_DELTA_THRESHOLD = 0.5
 
+local function encodePos(v)
+	local i = math.floor((v + 10000) * 10 + 0.5)
+	return math.floor(i / 65536) % 256, math.floor(i / 256) % 256, i % 256
+end
+
+local function encodeRot(v)
+	local i = math.floor(v * 10 + 0.5) % 3600
+	return math.floor(i / 256) % 256, i % 256
+end
+
+local function encodeTime(ms)
+	return math.floor(ms / 65536) % 256, math.floor(ms / 256) % 256, ms % 256
+end
+
+local function encodeModel(id)
+	return math.floor(id / 256) % 256, id % 256
+end
+
 function MovementRecorder:constructor(vehicleModel)
 	self.m_VehicleDummy = createVehicle(vehicleModel, 1337, 1337, -1337)
     self.m_VehicleDummy:setDimension(localPlayer.dimension)
@@ -40,6 +58,7 @@ function MovementRecorder:startRecording()
 	if not localPlayer.vehicle then return end
 
 	self.m_Record = {}
+    self.m_EncodedRecord = {}
 	self.m_Vehicle = localPlayer.vehicle
 	self.m_RecordStartTick = getTickCount()
 	self.m_Recording = true
@@ -57,6 +76,10 @@ end
 
 function MovementRecorder:isRecording()
 	return self.m_Recording
+end
+
+function MovementRecorder:getEncodedRecord()
+	return table.concat(self.m_EncodedRecord)
 end
 
 function MovementRecorder:startPlayback()
@@ -103,6 +126,17 @@ function MovementRecorder:renderRecord()
 	end
 
 	table.insert(self.m_Record, {model = model, position = position, rotation = rotation, elapsedTime = elapsedTime})
+
+	table.insert(self.m_EncodedRecord, string.char(
+		encodePos(position.x),
+		encodePos(position.y),
+		encodePos(position.z),
+		encodeRot(rotation.x),
+		encodeRot(rotation.y),
+		encodeRot(rotation.z),
+		encodeModel(model),
+		encodeTime(elapsedTime)
+	))
 end
 
 function MovementRecorder:renderPlayback()
@@ -139,5 +173,41 @@ function MovementRecorder:updateFrame(frameA, frameB, alpha)
 
 	self.m_VehicleDummy:setPosition(px, py, pz)
 	self.m_VehicleDummy:setRotation(rx, ry, rz)
-    self.m_VehicleDummy:setModel(frameA.model)
+
+    if frameA.model ~= self.m_VehicleDummy.model then
+        self.m_VehicleDummy:setModel(frameA.model)
+    end
+end
+
+function MovementRecorder:decodeRecord(encodedString)
+	local record = {}
+	local len = string.len(encodedString)
+	local offset = 1
+
+	while offset + 19 <= len do
+		local b1,b2,b3, b4,b5,b6, b7,b8,b9, b10,b11, b12,b13, b14,b15, b16,b17, b18,b19,b20 =
+			string.byte(encodedString, offset, offset + 19)
+
+		local px = (b1 * 65536 + b2 * 256 + b3) / 10 - 10000
+		local py = (b4 * 65536 + b5 * 256 + b6) / 10 - 10000
+		local pz = (b7 * 65536 + b8 * 256 + b9) / 10 - 10000
+
+		local rx = (b10 * 256 + b11) / 10
+		local ry = (b12 * 256 + b13) / 10
+		local rz = (b14 * 256 + b15) / 10
+
+		local model       = b16 * 256 + b17
+		local elapsedTime = b18 * 65536 + b19 * 256 + b20
+
+		table.insert(record, {
+			position    = Vector3(px, py, pz),
+			rotation    = Vector3(rx, ry, rz),
+			model       = model,
+			elapsedTime = elapsedTime,
+		})
+
+		offset = offset + 20
+	end
+
+	return record
 end
