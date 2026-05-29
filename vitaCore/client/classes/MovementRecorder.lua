@@ -1,5 +1,8 @@
 MovementRecorder = inherit(Object)
 
+local POSITION_DELTA_THRESHOLD = 0.05
+local ROTATION_DELTA_THRESHOLD = 0.5
+
 function MovementRecorder:constructor(vehicleModel)
 	self.m_VehicleDummy = createVehicle(vehicleModel, 1337, 1337, -1337)
     self.m_VehicleDummy:setDimension(localPlayer.dimension)
@@ -87,11 +90,17 @@ function MovementRecorder:renderRecord()
 		return self:stopRecording()
 	end
 
-	-- Fetching datas
 	local model = self.m_Vehicle.model
 	local position = self.m_Vehicle.position
 	local rotation = self.m_Vehicle.rotation
-	local elapsedTime = getTickCount()-self.m_RecordStartTick
+	local elapsedTime = getTickCount() - self.m_RecordStartTick
+
+	local last = self.m_Record[#self.m_Record]
+	if last then
+		local posDelta = (position - last.position):getLength()
+		local rotDelta = (rotation - last.rotation):getLength()
+		if posDelta < POSITION_DELTA_THRESHOLD and rotDelta < ROTATION_DELTA_THRESHOLD then	return end
+	end
 
 	table.insert(self.m_Record, {model = model, position = position, rotation = rotation, elapsedTime = elapsedTime})
 end
@@ -99,21 +108,36 @@ end
 function MovementRecorder:renderPlayback()
 	if not self.m_VehicleDummy then return end
 
-	local playbackProgress = (getTickCount() - self.m_PlaybackStartTick) / self.m_PlaybackDuration
-	self.m_PlayRecordFrame = math.floor(interpolateBetween(self.m_PlaybackStartFrame, 0, 0, #self.m_Record, 0, 0, playbackProgress, "Linear")+0.5)
+	local elapsed = getTickCount() - self.m_PlaybackStartTick
+	local recordTime = self.m_Record[self.m_PlaybackStartFrame].elapsedTime + elapsed
+	local record = self.m_Record
+	local count = #record
 
-	self:updateFrame()
+	while self.m_PlayRecordFrame < count and record[self.m_PlayRecordFrame + 1].elapsedTime <= recordTime do
+		self.m_PlayRecordFrame = self.m_PlayRecordFrame + 1
+	end
 
-	if playbackProgress >= 1 then
+	local frameA = record[self.m_PlayRecordFrame]
+	local frameB = record[self.m_PlayRecordFrame + 1]
+
+	if frameB then
+		local span = frameB.elapsedTime - frameA.elapsedTime
+		local alpha = span > 0 and (recordTime - frameA.elapsedTime) / span or 0
+		self:updateFrame(frameA, frameB, alpha)
+	else
+		self:updateFrame(frameA, frameA, 0)
+	end
+
+	if elapsed >= self.m_PlaybackDuration then
 		self:stopPlayback()
 	end
 end
 
-function MovementRecorder:updateFrame()
-	local frame = self.m_Record[self.m_PlayRecordFrame]
-	if not frame then return end
+function MovementRecorder:updateFrame(frameA, frameB, alpha)
+	local px, py, pz = interpolateBetween(frameA.position.x, frameA.position.y, frameA.position.z, frameB.position.x, frameB.position.y, frameB.position.z, alpha, "Linear")
+	local rx, ry, rz = interpolateBetween(frameA.rotation.x, frameA.rotation.y, frameA.rotation.z, frameB.rotation.x, frameB.rotation.y, frameB.rotation.z, alpha, "Linear")
 
-	self.m_VehicleDummy:setPosition(frame.position)
-	self.m_VehicleDummy:setRotation(frame.rotation)
-    self.m_VehicleDummy:setModel(frame.model)
+	self.m_VehicleDummy:setPosition(px, py, pz)
+	self.m_VehicleDummy:setRotation(rx, ry, rz)
+    self.m_VehicleDummy:setModel(frameA.model)
 end

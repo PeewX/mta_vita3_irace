@@ -52,6 +52,7 @@ function TimeTrial:onAttemptFinished()
     RaceTimer:getSingleton():finishAttempt()
 
     self.m_GhostRecord:stopRecording()
+    self.m_GhostPlayback:stopPlayback()
     self.m_GhostPlayback.m_Record = self.m_GhostRecord.m_Record
 end
 
