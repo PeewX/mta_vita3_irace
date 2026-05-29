@@ -24,6 +24,9 @@ function TimeTrial:onMapStart(duration)
     RaceTimer:getSingleton():init(duration)
     self.m_TimerWidget:show()
     playSound("files/audio/countstart.mp3")
+
+    self.m_GhostRecord = MovementRecorder:new(localPlayer.vehicle:getModel())
+    self.m_GhostPlayback = MovementRecorder:new(localPlayer.vehicle:getModel())
 end
 
 function TimeTrial:onUpdateMapTime(duration, timeLeft)
@@ -39,16 +42,24 @@ function TimeTrial:onCountdownFinished()
     localPlayer.vehicle:setFrozen(false)
     RaceTimer:getSingleton():startAttempt()
     triggerServerEvent("playerAttemptStarted", localPlayer)
+
+    self.m_GhostRecord:startRecording()
+    self.m_GhostPlayback:startPlayback()
 end
 
 function TimeTrial:onAttemptFinished()
     self.m_Countdown:stop()
     RaceTimer:getSingleton():finishAttempt()
+
+    self.m_GhostRecord:stopRecording()
+    self.m_GhostPlayback.m_Record = self.m_GhostRecord.m_Record
 end
 
 function TimeTrial:onMapStopped()
     self.m_Countdown:stop()
     self.m_TimerWidget:hide()
+    delete(self.m_GhostRecord)
+    delete(self.m_GhostPlayback)
 end
 
 -- TODO (future migration from racemodes-client.lua):

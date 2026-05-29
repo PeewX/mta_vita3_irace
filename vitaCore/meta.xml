@@ -114,6 +114,7 @@
     <script src = "client/classes/SpawnPosition.lua" type = "client" cache = "false"/>
     <script src = "client/classes/Timings.lua" type = "client" cache = "false"/>
     <script src = "client/classes/RaceTimer.lua" type = "client" cache = "false"/>
+    <script src = "client/classes/MovementRecorder.lua" type = "client" cache = "false"/>
     <script src = "client/classes/UI/Countdown.lua" type = "client" cache = "false"/>
     <script src = "client/classes/UI/TimerWidget.lua" type = "client" cache = "false"/>
     <script src = "client/classes/Gamemodes/TimeTrial.lua" type = "client" cache = "false"/>

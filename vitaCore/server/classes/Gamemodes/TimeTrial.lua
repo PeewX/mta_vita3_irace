@@ -148,6 +148,8 @@ function TimeTrial:_loadMap(mapname)
     self.m_Element:setData("map",     "none")
     self.m_Element:setData("mapname", "loading...")
 
+    if self.m_NextMapname then self.m_NextMapname = nil end
+
     if not mapname or mapname == "random" then
         mapname = getRandomMap(GAMEMODES.DM)
     end

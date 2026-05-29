@@ -150,7 +150,7 @@ end
 addEventHandler("onClientVehicleEnter", getRootElement(),
     function(thePlayer, seat)
         if seat == 0 then
-			setVehicleShaderBL(source, tonumber(getElementData(thePlayer, "Backlights")))
+			setVehicleShaderBL(source, tonumber(getElementData(thePlayer, "Backlights") or tonumber(getElementData(localPlayer, "Backlights"))))
 		end
     end
 )
