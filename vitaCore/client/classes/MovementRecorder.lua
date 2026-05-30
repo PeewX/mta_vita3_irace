@@ -37,6 +37,7 @@ function MovementRecorder:constructor(vehicleModel)
 	self.m_DummyPed:warpIntoVehicle(self.m_VehicleDummy)
 
 	self.m_Record = {}
+	self.m_EncodedRecord = {}
 	self.m_Recording = false
 	self.m_RenderPlayback = false
 	self.m_PlayRecordFrame = 1
@@ -70,8 +71,6 @@ function MovementRecorder:stopRecording()
 	if not self.m_Recording then return end
 	self.m_Recording = false
 	removeEventHandler("onClientRender", root, self.m_fnRenderRecord)
-
-	self.m_Record.duration = getTickCount() - self.m_RecordStartTick
 end
 
 function MovementRecorder:isRecording()
@@ -87,14 +86,10 @@ function MovementRecorder:startPlayback()
     if #self.m_Record == 0 then return end
 	if self.m_RenderPlayback then self:stopPlayback() end
 
-	--if self.m_PlayRecordFrame >= #self.m_Record then
-		self.m_PlayRecordFrame = 1
-	--end
-
+	self.m_PlayRecordFrame = 1
 	self.m_RenderPlayback = true
 	self.m_PlaybackStartTick = getTickCount()
 	self.m_PlaybackStartFrame = self.m_PlayRecordFrame or 1
-	self.m_PlaybackDuration = self.m_Record.duration - self.m_Record[self.m_PlaybackStartFrame].elapsedTime
 
 	addEventHandler("onClientRender", root, self.m_fnRenderPlayback)
 end
@@ -127,16 +122,16 @@ function MovementRecorder:renderRecord()
 
 	table.insert(self.m_Record, {model = model, position = position, rotation = rotation, elapsedTime = elapsedTime})
 
-	table.insert(self.m_EncodedRecord, string.char(
-		encodePos(position.x),
-		encodePos(position.y),
-		encodePos(position.z),
-		encodeRot(rotation.x),
-		encodeRot(rotation.y),
-		encodeRot(rotation.z),
-		encodeModel(model),
-		encodeTime(elapsedTime)
-	))
+	local px1, px2, px3 = encodePos(position.x)
+	local py1, py2, py3 = encodePos(position.y)
+	local pz1, pz2, pz3 = encodePos(position.z)
+	local rx1, rx2	    = encodeRot(rotation.x)
+	local ry1, ry2	    = encodeRot(rotation.y)
+	local rz1, rz2      = encodeRot(rotation.z)
+	local m1, m2        = encodeModel(model)
+	local t1, t2, t3    = encodeTime(elapsedTime)
+
+	table.insert(self.m_EncodedRecord, string.char(px1,px2,px3,	py1,py2,py3, pz1,pz2,pz3, rx1,rx2,	ry1,ry2, rz1,rz2, m1,m2, t1,t2,t3))
 end
 
 function MovementRecorder:renderPlayback()
@@ -160,16 +155,19 @@ function MovementRecorder:renderPlayback()
 		self:updateFrame(frameA, frameB, alpha)
 	else
 		self:updateFrame(frameA, frameA, 0)
-	end
-
-	if elapsed >= self.m_PlaybackDuration then
 		self:stopPlayback()
 	end
 end
 
+local function lerpAngle(a, b, t)
+    local diff = (b - a) % 360
+    if diff > 180 then diff = diff - 360 end
+    return a + diff * t
+end
+
 function MovementRecorder:updateFrame(frameA, frameB, alpha)
 	local px, py, pz = interpolateBetween(frameA.position.x, frameA.position.y, frameA.position.z, frameB.position.x, frameB.position.y, frameB.position.z, alpha, "Linear")
-	local rx, ry, rz = interpolateBetween(frameA.rotation.x, frameA.rotation.y, frameA.rotation.z, frameB.rotation.x, frameB.rotation.y, frameB.rotation.z, alpha, "Linear")
+    local rx, ry, rz = lerpAngle(frameA.rotation.x, frameB.rotation.x, alpha), lerpAngle(frameA.rotation.y, frameB.rotation.y, alpha), lerpAngle(frameA.rotation.z, frameB.rotation.z, alpha) 
 
 	self.m_VehicleDummy:setPosition(px, py, pz)
 	self.m_VehicleDummy:setRotation(rx, ry, rz)
