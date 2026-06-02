@@ -116,9 +116,14 @@ end
 
 function DatabaseMap.getPlayerToptimeCount(player, mapPrefix)
     local result = sql:queryFetchSingle("SELECT COUNT(*) as count FROM ??_map_records r JOIN ??_maps m ON m.ID = r.MapId WHERE r.PlayerId = ? AND m.mapname LIKE '??%' AND (SELECT COUNT(*) FROM ??_map_records r2 WHERE r2.MapId = r.MapId AND r2.Time <= r.Time) <= 12",
-        sql:getPrefix(), sql:getPrefix(), player, mapPrefix, sql:getPrefix())
+        sql:getPrefix(), sql:getPrefix(), player:getID(), mapPrefix, sql:getPrefix())
 
     return result and result.count or 0
+end
+
+function DatabaseMap.saveGhost(player, MapId, GhostData)
+    sql:queryExec("UPDATE ??_map_records SET Ghosts = COMPRESS(?) WHERE MapId = ? AND PlayerId = ?",
+        sql:getPrefix(), GhostData, MapId, player:getID())
 end
 
 ---- Migrate toptimes

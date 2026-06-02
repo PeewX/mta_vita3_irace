@@ -35,7 +35,7 @@ function TimeTrial:constructor()
     self.m_Rankingboard = {}
 
     addEventHandler("joinTT",               root, bind(self.onJoin,             self))
-    addEventHandler("playerAttemptStarted",   root, bind(self.onPlayerAttemptStarted, self))
+    addEventHandler("playerAttemptStarted", root, bind(self.onPlayerAttemptStarted, self))
     addEventHandler("playerFinishedMap",    root, bind(self.onPlayerFinish,     self))
     addEventHandler("downloadMapFinished",  root, bind(self.onDownloadFinished, self))
     --addEventHandler("mapReady",             root, bind(self.onMapReady,         self))
@@ -322,7 +322,7 @@ function TimeTrial:onPlayerFinish(finishTime, timings)
     player:triggerEvent("ttAttemptFinished")
 
     -- Record toptime
-    local improved, hadToptime = self.m_CurrentMap:recordFinish(player, finishTime, timings)
+    local improved, hadToptime = self.m_CurrentMap:recordFinish(player, finishTime, splits)
 
     if improved then
         callClientFunction(player, "forceToptimesOpen")

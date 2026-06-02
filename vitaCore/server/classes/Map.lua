@@ -55,6 +55,10 @@ function Map:destructor()
     self.m_Gamemode.m_Element:setData("startTick", nil)
 end
 
+function Map:getID()
+    return self.m_DatabaseMap.m_MapID
+end
+
 function Map:sendToPlayer(player)
     outputDebugString("Send map to player..")
     player:triggerLatentEvent("loadMap", self.m_Map.m_MapData, self.m_Map.m_Settings, self.m_Map.m_ClientScripts, self.m_Map.m_Package)
@@ -176,12 +180,17 @@ end
 
 -- Record a finish. Returns (improved, hadToptime, oldPosition).
 -- improved = true if a new or better toptime was set.
-function Map:recordFinish(player, finishTime, timings)
-    if timings then
-        self.m_DatabaseMap:setTimings(player.m_ID, finishTime, timings)
-    end
+function Map:recordFinish(player, finishTime, splits)
+    --if timings then
+    --    self.m_DatabaseMap:setTimings(player.m_ID, finishTime, timings)
+    --end
     local hadToptime, oldPosition = self.m_DatabaseMap:getToptimeFromPlayer(player.m_ID)
-    local improved = self.m_DatabaseMap:addNewToptime(player.m_ID, finishTime)
+    local improved, droppedPlayerID = self.m_DatabaseMap:addNewToptime(player.m_ID, finishTime, splits)
+
+    if improved then
+        PlayerManager:getSingleton():requestGhost(player, self:getID())
+    end
+
     return improved, hadToptime, oldPosition
 end
 
