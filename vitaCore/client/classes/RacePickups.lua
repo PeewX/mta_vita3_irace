@@ -8,7 +8,8 @@
 RacePickup = inherit(Object)
 RacePickups = {}
 
-function RacePickup:constructor(pickupType, vehicleId, position)
+function RacePickup:constructor(id, pickupType, vehicleId, position)
+    self.m_Id = id
     self.m_Type = pickupType
     self.m_VehicleId = vehicleId
     self.m_ColShape = ColShape.Sphere(position, 3.5)
@@ -40,6 +41,7 @@ function RacePickup:onPickupHit(hitElement, matchingDimension)
     end
 
     if self.m_Type == "nitro" then
+        Splits:getSingleton():addSplit(self.m_Id)
         hitElement:addUpgrade(1010)
         triggerServerEvent("syncVehicleNitro", localPlayer)
     end
@@ -57,10 +59,9 @@ function RacePickup:changeVehicle(hitElement)
     if hitElement.model == self.m_VehicleId then return end
 
     if self.m_VehicleId == VEHICLES.HUNTER then
-        --Timings:getSingleton():hitPickup("Hunter", RaceTimer:getSingleton():getPassedTime())
-        --local timings = Timings:getSingleton():getTimings()
         RaceTimer:getSingleton():finishAttempt()
-        triggerServerEvent('playerFinishedMap', localPlayer, RaceTimer:getSingleton():getPassedTime(), {})
+        Splits:getSingleton():finish()
+        triggerServerEvent('playerFinishedMap', localPlayer, RaceTimer:getSingleton():getPassedTime(), Splits:getSingleton():getRecord())
         if localPlayer:isGamemode(GAMEMODES.TT) then return end
     end
 

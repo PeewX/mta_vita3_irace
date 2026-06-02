@@ -102,8 +102,8 @@ function MapManager:_loadMapElements()
         end
     end
 
-    for _, v in pairs(self.m_MapData["racepickup"]  or {}) do
-        local pickup = RacePickup:new(v.pickuptype, v.model, Vector3(v.x, v.y, v.z))
+    for i, v in pairs(self.m_MapData["racepickup"]  or {}) do
+        local pickup = RacePickup:new(i, v.pickuptype, v.model, Vector3(v.x, v.y, v.z))
         table.insert(self.m_RacePickups, pickup)
     end
 
