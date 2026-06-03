@@ -34,6 +34,9 @@ function Core:ready()
         EngineDFF(path:format(pickupName, "dff")):replace(pickupModelID)
         Engine.setModelLODDistance(pickupModelID, 100)
     end
+
+    setTime(12, 0)
+    setMinuteDuration(60000)
 end
 
 function Core:afterLogin()
