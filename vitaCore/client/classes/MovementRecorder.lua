@@ -100,7 +100,7 @@ function MovementRecorder:stopPlayback()
 end
 
 function MovementRecorder:isPlaybackRendered()
-	return m_RenderPlayback
+	return self.m_RenderPlayback
 end
 
 function MovementRecorder:renderRecord()
