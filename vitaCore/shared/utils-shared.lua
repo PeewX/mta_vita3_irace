@@ -112,11 +112,11 @@ function getTimestamp()
 	return stamp
 end
 
-function math.round(number, decimals, method)
-    decimals = decimals or 0
-    local factor = 10 ^ decimals
-    if (method == "ceil" or method == "floor") then return math[method](number * factor) / factor
-    else return tonumber(("%."..decimals.."f"):format(number)) end
+function math.round(num, decimals)
+    decimals = math.pow(10, decimals or 0)
+    num = num * decimals
+    if num >= 0 then num = math.floor(num + 0.5) else num = math.ceil(num - 0.5) end
+    return num / decimals
 end
 
 function isLoggedIn(player)
