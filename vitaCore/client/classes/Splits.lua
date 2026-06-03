@@ -7,7 +7,7 @@
 -- *
 -- ****************************************************************************
 
-Splits = inherit(Singelton)
+Splits = inherit(Singleton)
 addRemoteEvents{"initSplits"}
 
 function Splits:constructor()
@@ -24,16 +24,22 @@ end
 function Splits:initSplits()
 end
 
+function Splits:reset()
+    self.m_Record = {}
+end
+
 function Splits:getRecord()
     return self.m_Record
 end
 
 function Splits:addSplit(Id)
-    self.m_Record[Id] =  RaceTimer:getSingleton():getPassedTime()
+    local timePassed = RaceTimer:getSingleton():getPassedTime()
+    local vehicleSpeed = math.round(localPlayer.vehicle:getSpeed(), 1) * 10 -- Store speed as int
+    self.m_Record[Id] =  {timePassed, vehicleSpeed}
 end
 
 function Splits:finish()
     if self.m_Finished then return end
     self.m_Finished = true
-    self.m_Record["Finish"] =  RaceTimer:getSingleton():getPassedTime()
+    self:addSplit("Hunter")
 end

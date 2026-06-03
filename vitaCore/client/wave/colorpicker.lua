@@ -250,9 +250,5 @@ function rgb2hsv(r, g, b)
   return h, s, v
 end
 
-function math.round(v)
-  return math.floor(v+0.5)
-end
-
 addEvent("onColorPickerOK", true)
 addEvent("onColorPickerChange", true)

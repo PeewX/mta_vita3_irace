@@ -45,6 +45,7 @@ function Core:afterLogin()
     MapManager:new()
     SpawnPosition:new()
     Timings:new()
+    Splits:new()
     RaceTimer:new()
 
     --Gamemodes

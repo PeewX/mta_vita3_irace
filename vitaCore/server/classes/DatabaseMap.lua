@@ -5,6 +5,7 @@ function DatabaseMap:constructor(sMapname)
 
     local result = sql:queryFetchSingle("SELECT * FROM ??_maps WHERE mapname = ?", sql:getPrefix(), sMapname)
     self.m_Mapname = sMapname
+    self.m_MapID = result and result.ID or false
     self.m_Toptimes = result and self:loadToptimes() or {}
     self.m_Timings = result and self:loadSplits() or {}
     self.m_Ratings = result and fromJSON(result.ratings) or {}
@@ -14,8 +15,6 @@ function DatabaseMap:constructor(sMapname)
     if not result then
         local _, _, insertID = sql:queryFetch("INSERT INTO ??_maps (mapname) VALUES (?)", sql:getPrefix(), self.m_Mapname)
         self.m_MapID = insertID
-    else
-        self.m_MapID = result.ID
     end
 end
 
@@ -33,6 +32,8 @@ function DatabaseMap:loadToptimes()
         end
     end
 
+    outputDebugString("TopTimes Res:" .. inspect(result))
+    outputDebugString("TopTimes:" .. inspect(toptimes))
     return toptimes
 end
 
@@ -43,7 +44,7 @@ function DatabaseMap:loadSplits()
     return result and fromJSON(result.Splits) or {}
 end
 
-function DatabaseMap:addNewToptime(PlayerID, time)
+function DatabaseMap:addNewToptime(PlayerID, time, splits)
     -- Check if player has an existing record
     local existing = sql:queryFetchSingle("SELECT Time FROM ??_map_records WHERE MapId = ? AND PlayerId = ?",
         sql:getPrefix(), self.m_MapID, PlayerID)
@@ -54,9 +55,10 @@ function DatabaseMap:addNewToptime(PlayerID, time)
     -- Snapshot rang 12
     local old12 = self.m_Toptimes[12]
 
+    local encodedSplits = toJSON(splits)
     local now = getRealTime().timestamp
-    sql:queryExec("INSERT INTO ??_map_records (MapId, PlayerId, Time, Added, Updated) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE Time = ?, Updated = ?",
-        sql:getPrefix(), self.m_MapID, PlayerID, time, now, now, time, now)
+    sql:queryExec("INSERT INTO ??_map_records (MapId, PlayerId, Time, Splits, Added, Updated) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE Time = ?, Splits = ?, Updated = ?",
+        sql:getPrefix(), self.m_MapID, PlayerID, time, encodedSplits, now, now, time, encodedSplits, now)
 
     self.m_Toptimes = self:loadToptimes()
 

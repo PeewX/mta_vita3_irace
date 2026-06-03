@@ -310,7 +310,7 @@ end
 
 -- ==================== PLAYER FINISH ====================
 
-function TimeTrial:onPlayerFinish(finishTime, timings)
+function TimeTrial:onPlayerFinish(finishTime, splits)
     local player = client
     if not player or not self.m_Players[player] then return end
     if not self.m_CurrentMap then return end

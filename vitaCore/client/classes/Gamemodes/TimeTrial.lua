@@ -44,10 +44,12 @@ function TimeTrial:onCountdownFinished()
     if not localPlayer.vehicle then return end
     localPlayer.vehicle:setFrozen(false)
     RaceTimer:getSingleton():startAttempt()
-    triggerServerEvent("playerAttemptStarted", localPlayer)
+    Splits:getSingleton():reset()
 
     self.m_GhostRecord:startRecording()
     self.m_GhostPlayback:startPlayback()
+
+     triggerServerEvent("playerAttemptStarted", localPlayer)
 end
 
 function TimeTrial:onAttemptFinished()
@@ -65,7 +67,7 @@ function TimeTrial:onAttemptFinished()
 end
 
 function TimeTrial:onServerRequestGhost(Id)
-    if not self:isGamemode(GAMEMODES.TT) then return end
+    if not localPlayer:isGamemode(GAMEMODES.TT) then return end
     if self.m_GhostRecord:isRecording() then outputDebugString("Error. Server requested ghost while recording") return end
 
     -- Cancel previous unfinished uploads with same Id
@@ -74,8 +76,8 @@ function TimeTrial:onServerRequestGhost(Id)
         if status then cancelLatentEvent(self.m_GhostUploads[Id]) end
     end
 
-    triggerLatentSeverEvent("clientSendGhost", 2000000, false, localPlayer, Id, self.m_GhostRecord:getEncodedRecord())
-    self.m_GhostUpload[Id] = #getLatentEventHandles()
+    triggerLatentServerEvent("clientSendGhost", 2000000, false, localPlayer, Id, self.m_GhostRecord:getEncodedRecord())
+    self.m_GhostUploads[Id] = #getLatentEventHandles()
 end
 
 --[[addCommandHandler("lr", function(cmd, inputString)
