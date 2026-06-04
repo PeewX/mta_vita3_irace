@@ -181,15 +181,8 @@ end
 -- Record a finish. Returns (improved, hadToptime, oldPosition).
 -- improved = true if a new or better toptime was set.
 function Map:recordFinish(player, finishTime, splits)
-    --if timings then
-    --    self.m_DatabaseMap:setTimings(player.m_ID, finishTime, timings)
-    --end
     local hadToptime, oldPosition = self.m_DatabaseMap:getToptimeFromPlayer(player.m_ID)
-    local improved, droppedPlayerID = self.m_DatabaseMap:addNewToptime(player.m_ID, finishTime, splits)
-
-    if improved then
-        PlayerManager:getSingleton():requestGhost(player, self:getID())
-    end
+    local improved, droppedPlayerID = self.m_DatabaseMap:addNewToptime(player, finishTime, splits)
 
     return improved, hadToptime, oldPosition
 end

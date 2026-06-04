@@ -32,25 +32,26 @@ function DatabaseMap:loadToptimes()
         end
     end
 
-    outputDebugString("TopTimes Res:" .. inspect(result))
-    outputDebugString("TopTimes:" .. inspect(toptimes))
     return toptimes
 end
 
 function DatabaseMap:loadSplits()
-    local result = sql:queryFetchSingle("SELECT r.PlayerId, r.Splits FROM ??_map_records r WHERE r.MapId = ? AND r.Splits != '' AND r.Splits != '[[]]' ORDER BY r.Time ASC LIMIT 1",
+    local result = sql:queryFetchSingle("SELECT PlayerId, Splits FROM ??_map_records WHERE MapId = ? AND Splits != '' AND Splits != '[[]]' ORDER BY Time ASC LIMIT 1",
         sql:getPrefix(), self.m_MapID)
 
     return result and fromJSON(result.Splits) or {}
 end
 
-function DatabaseMap:addNewToptime(PlayerID, time, splits)
+function DatabaseMap:addNewToptime(player, time, splits)
     -- Check if player has an existing record
     local existing = sql:queryFetchSingle("SELECT Time FROM ??_map_records WHERE MapId = ? AND PlayerId = ?",
-        sql:getPrefix(), self.m_MapID, PlayerID)
+        sql:getPrefix(), self.m_MapID, player:getID())
 
     -- Return if existing record is better
-    if existing and tonumber(existing.Time) <= time then return false end
+    if existing and tonumber(existing.Time) <= time then
+        self:backfillSplitsAndGhost(player, time, splits)
+        return false
+    end
 
     -- Snapshot rang 12
     local old12 = self.m_Toptimes[12]
@@ -58,7 +59,9 @@ function DatabaseMap:addNewToptime(PlayerID, time, splits)
     local encodedSplits = toJSON(splits)
     local now = getRealTime().timestamp
     sql:queryExec("INSERT INTO ??_map_records (MapId, PlayerId, Time, Splits, Added, Updated) VALUES (?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE Time = ?, Splits = ?, Updated = ?",
-        sql:getPrefix(), self.m_MapID, PlayerID, time, encodedSplits, now, now, time, encodedSplits, now)
+        sql:getPrefix(), self.m_MapID, player:getID(), time, encodedSplits, now, now, time, encodedSplits, now)
+
+    PlayerManager:getSingleton():requestGhost(player, self.m_MapID)
 
     self.m_Toptimes = self:loadToptimes()
 
@@ -75,6 +78,37 @@ end
 
 function DatabaseMap:removeToptime(ID)
     -- Todo
+end
+
+function DatabaseMap:backfillSplitsAndGhost(player, time, splits)
+    -- Old records doesn't have splits or a ghost, add them even if the time is slower
+
+    local result = sql:queryFetchSingle("SELECT Splits, Ghost IS NOT NULL as HasGhost FROM ??_map_records WHERE MapId = ? AND PlayerId = ?;",
+        sql:getPrefix(), self.m_MapID, player:getID())
+
+    if result then
+        local updateSplits, requestGhost = false, false
+
+        if result.Splits then
+            local dbSplits = fromJSON(result.Splits)
+            if dbSplits and dbSplits.backfill and dbSplits.backfill > time then
+                updateSplits, requestGhost = true, true
+            end
+        else
+            updateSplits, requestGhost = true, true
+        end
+
+        if not toboolean(result.HasGhost) then requestGhost = true end
+
+        if updateSplits then
+            splits.backfill = time
+            sql:queryExec("UPDATE ??_map_records SET Splits = ? WHERE MapId = ? AND PlayerId = ?", sql:getPrefix(), toJSON(splits), self.m_MapID, player:getID())
+         end
+
+        if requestGhost then
+            PlayerManager:getSingleton():requestGhost(player, self.m_MapID)
+        end
+    end
 end
 
 function DatabaseMap:getToptimeFromPlayer(PlayerID)
@@ -124,7 +158,7 @@ function DatabaseMap.getPlayerToptimeCount(player, mapPrefix)
 end
 
 function DatabaseMap.saveGhost(player, MapId, GhostData)
-    sql:queryExec("UPDATE ??_map_records SET Ghosts = COMPRESS(?) WHERE MapId = ? AND PlayerId = ?",
+    sql:queryExec("UPDATE ??_map_records SET Ghost = COMPRESS(?) WHERE MapId = ? AND PlayerId = ?",
         sql:getPrefix(), GhostData, MapId, player:getID())
 end
 
@@ -141,7 +175,8 @@ local function migrateEntry(mapId, playerId, time, added, playerTimings)
         return "skipped"
     end
 
-    local result = sql:queryFetch("INSERT INTO ??_map_records (MapId, PlayerId, Time, Splits, Ghosts, Added, Updated) VALUES (?, ?, ?, ?, ?, ?, ?)", sql:getPrefix(), mapId, playerId, time, toJSON(playerTimings), "", added, added)
+    local writeSplits = playerTimings and toJSON(playerTimings) or nil
+    local result = sql:queryFetch("INSERT INTO ??_map_records (MapId, PlayerId, Time, Splits, Added, Updated) VALUES (?, ?, ?, ?, ?, ?)", sql:getPrefix(), mapId, playerId, time, writeSplits, added, added)
 
     if result then
         return "inserted"
@@ -195,7 +230,7 @@ addCommandHandler("migrate_toptimes", function()
                         added = FALLBACK_2016
                     end
 
-                    local playerTimings = (timings and timingsPlayerId == playerId) and timings or {}
+                    local playerTimings = (timings and timingsPlayerId == playerId) and timings or false
 
                     local status = migrateEntry(mapId, playerId, time, added, playerTimings)
                     if status == "inserted" then
