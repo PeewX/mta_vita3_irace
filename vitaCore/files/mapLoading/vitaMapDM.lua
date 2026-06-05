@@ -656,7 +656,7 @@ function onDownloadFinish ( file )
 								end
 								setElementDimension(object, getElementData(getLocalPlayer(), "gameMode"))
 								setElementData(pickup, "object", object)
-								setElementData(pickup, "id", i2)
+								setElementData(pickup, "id", i2+1)
 
 								local col = createColSphere ( posX, posY, posZ, 3.5 )
 								setElementData(pickup, "col", col)

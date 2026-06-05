@@ -41,9 +41,9 @@ function RacePickup:onPickupHit(hitElement, matchingDimension)
     end
 
     if self.m_Type == "nitro" then
-        Splits:getSingleton():addSplit(self.m_Id)
         hitElement:addUpgrade(1010)
         triggerServerEvent("syncVehicleNitro", localPlayer)
+        Splits:getSingleton():addSplit(self.m_Id)
     end
 
     if self.m_Type == "vehiclechange" then

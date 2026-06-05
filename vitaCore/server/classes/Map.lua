@@ -188,12 +188,18 @@ function Map:recordFinish(player, finishTime, splits)
 end
 
 function Map:sendToptimes(player)
-    self.m_DatabaseMap:sendToptimes(player)
+    local toptimes = self.m_DatabaseMap.m_Toptimes
+    local bestSplitsBy = self.m_DatabaseMap.m_GlobalBestSplitsBy
+
+    player:triggerEvent("initToptimes", toptimes, bestSplitsBy)
 end
 
 function Map:broadcastToptimes(players)
-    for _, p in pairs(players) do
-        self.m_DatabaseMap:sendToptimes(p)
+    local toptimes = self.m_DatabaseMap.m_Toptimes
+    local bestSplitsBy = self.m_DatabaseMap.m_GlobalBestSplitsBy
+
+    for _, player in pairs(players) do
+        player:triggerEvent("initToptimes", toptimes, bestSplitsBy)
     end
 end
 

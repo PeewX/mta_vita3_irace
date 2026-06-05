@@ -124,13 +124,6 @@ end
 function setToptimeTable(ttable, timings)
 	toptimeTable = ttable
 	topTimingPlayerID = timings
-
-	--[[if toptimeTable == false then return end
-	for i = 1, 12 do
-		if toptimeTable[i] then
-
-			--toptimeTable[i].accountname = toptimeTable[i].name
-			--toptimeTable[i].name =  tostring(getNameFromAccountName(toptimeTable[i].name))
-		end
-	end]]
 end
+addEvent("initToptimes", true)
+addEventHandler("initToptimes", localPlayer, setToptimeTable)

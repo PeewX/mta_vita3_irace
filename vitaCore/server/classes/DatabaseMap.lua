@@ -36,21 +36,11 @@ function DatabaseMap:loadToptimes()
     self.m_Toptimes = toptimes
 end
 
-local function fixLegacySplits(jsonString)
-    if jsonString then
-        local data = fromJSON(jsonString)
-        if data and data.timings then
-            return data.timings
-        elseif data then return data
-        else return {} end
-    end
-end
-
 function DatabaseMap:fetchBestSplits()
     local result = sql:queryFetchSingle("SELECT PlayerId, Splits FROM ??_map_records WHERE MapId = ? AND Splits IS NOT NULL ORDER BY Time ASC LIMIT 1",
         sql:getPrefix(), self.m_MapID)
 
-    self.m_GlobalBestSplits = result and fixLegacySplits(result.Splits) or {}
+    self.m_GlobalBestSplits = result and fromJSON(result.Splits) or {}
     self.m_GlobalBestSplitsBy = result and result.PlayerId or false
 end
 
@@ -131,7 +121,7 @@ function DatabaseMap:getSplitsFromPlayer(player)
     local result = sql:queryFetchSingle("SELECT Splits FROM ??_map_records WHERE MapId = ? AND PlayerId = ?",
         sql:getPrefix(), self.m_MapID, player:getID())
 
-    return result and fixLegacySplits(result.Splits) or {}
+    return result and fromJSON(result.Splits) or {}
 end
 
 function DatabaseMap:getToptimeFromPlayer(PlayerID)
@@ -145,6 +135,7 @@ function DatabaseMap:getToptimeFromPlayer(PlayerID)
 end
 
 function DatabaseMap:sendToptimes(player)
+    -- Deprecated, use Map Class instead
     if player then
         callClientFunction(player, "setToptimeTable", self.m_Toptimes, self.m_GlobalBestSplitsBy)
     end
@@ -185,7 +176,9 @@ function DatabaseMap.saveGhost(player, MapId, GhostData)
         sql:getPrefix(), GhostData, MapId, player:getID())
 end
 
----- Migrate toptimes
+-- =============================================================================================================
+-- Migrate toptimes
+-- =============================================================================================================
 
 local FALLBACK_2016 = 1467051550
 local FALLBACK_2020 = 1597947550
@@ -209,12 +202,23 @@ local function migrateEntry(mapId, playerId, time, added, playerTimings)
     end
 end
 
+local function migrateTimings(timings, mapId)
+    assert(type(timings == "table"))
+    if timings and timings.timings then
+        local splits = {}
+        for k, v in pairs(timings.timings) do
+            if tonumber(k) then splits[tostring(tonumber(k) + 1)] = {v} -- Legacy timings id is shifted and didn't got vehicle velocity
+            elseif k == "Hunter" then splits[k] = {v}
+            else iprint("[Migration] Invalid timing to split index: " .. tostring(k) .. "for MapId: " .. tostring(mapId)) end
+        end
+        return splits
+    end
+end
+
 addCommandHandler("migrate_toptimes", function()
-    outputServerLog("[Migration] Starting toptimes migration...")
     iprint("[Migration] Starting toptimes migration...")
 
     local maps = sql:queryFetch("SELECT ID, mapname, toptimes, timings FROM ??_maps", sql:getPrefix())
-
     if not maps then iprint("[Migration] ERROR: Could not fetch ir_maps") return end
 
     local inserted = 0
@@ -253,7 +257,7 @@ addCommandHandler("migrate_toptimes", function()
                         added = FALLBACK_2016
                     end
 
-                    local playerTimings = (timings and timingsPlayerId == playerId) and timings or false
+                    local playerTimings = (timings and timingsPlayerId == playerId) and migrateTimings(timings, mapId) or false
 
                     local status = migrateEntry(mapId, playerId, time, added, playerTimings)
                     if status == "inserted" then
@@ -269,5 +273,5 @@ addCommandHandler("migrate_toptimes", function()
     end
 
     local summary = string.format("[Migration] Done. Inserted: %d | Skipped: %d | Errors: %d", inserted, skipped, errors)
-    outputServerLog(summary)
+    iprint(summary)
 end)

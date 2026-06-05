@@ -14,8 +14,8 @@ Splits.COLOR = {
     BEST = {hex = "#7769c8", rgb = tocolor(170, 10, 210)},
     PERSONAL = {hex = "#6eb446", rgb = tocolor(55, 215, 50)},
     SLOWER = {hex = "#dcbe46", rgb = tocolor(255, 200, 0)},
-    SPEED_FASTER = {hex = "#44FF44", rrg = tocolor()},
-    SPEED_SLOWER = {hex = "#FF4444", rgb = tocolor()}
+    SPEED_FASTER = {hex = "#44FF44", rgb = tocolor(68, 255, 68)},
+    SPEED_SLOWER = {hex = "#FF4444", rgb = tocolor(255, 68, 68)}
 }
 
 function Splits:constructor()
@@ -48,14 +48,6 @@ function Splits:getRecord()
     return self.m_Record
 end
 
-function legacyFix(d, t)
-    if type(d) == "number" then
-        return t == "time" and d or 0           -- Legacy format, only time available
-    elseif type(d) == "table" then
-        return t == "time" and d[1] or d[2]     -- Returns time or vehicleSpeed
-    end
-end
-
 function Splits:addSplit(Id)
     local timePassed = RaceTimer:getSingleton():getPassedTime()
     local vehicleSpeed = math.round(localPlayer.vehicle:getSpeed(), 1) * 10 -- Store speed as int
@@ -65,26 +57,23 @@ function Splits:addSplit(Id)
     local personalTimeDiff, personalSpeedDiff = false, false
 
     if self.m_GlobalBest and self.m_GlobalBest[Id] then
-        globalTimeDiff  = timePassed    - legacyFix(self.m_GlobalBest[Id], "time")
-        globalSpeedDiff = (vehicleSpeed  - legacyFix(self.m_GlobalBest[Id], "speed"))/10
-        -- legacyFix returns 0 for legacy format, so treat 0-diff as no data
-        if type(self.m_GlobalBest[Id]) == "number" then globalSpeedDiff = false end
+        globalTimeDiff = timePassed - self.m_GlobalBest[Id][1]
+        if self.m_GlobalBest[Id][2] then globalSpeedDiff = (vehicleSpeed - self.m_GlobalBest[Id][2])/10 end
     end
 
     if self.m_PersonalBest and self.m_PersonalBest[Id] then
-        personalTimeDiff  = timePassed   - legacyFix(self.m_PersonalBest[Id], "time")
-        personalSpeedDiff = (vehicleSpeed - legacyFix(self.m_PersonalBest[Id], "speed"))/10
-        if type(self.m_PersonalBest[Id]) == "number" then personalSpeedDiff = false end
+        personalTimeDiff = timePassed - self.m_PersonalBest[Id][1]
+        if self.m_PersonalBest[Id][2] then personalSpeedDiff = (vehicleSpeed - self.m_PersonalBest[Id][2])/10 end
     end
 
     if globalTimeDiff and globalTimeDiff < 0 then
-        self:renderInfo(globalTimeDiff, globalSpeedDiff, Splits.COLOR.BEST, Id)
+        self:renderInfo(globalTimeDiff, globalSpeedDiff, Splits.COLOR.BEST)
     elseif personalTimeDiff and personalTimeDiff < 0 then
-        self:renderInfo(personalTimeDiff, personalSpeedDiff, Splits.COLOR.PERSONAL, Id)
+        self:renderInfo(personalTimeDiff, personalSpeedDiff, Splits.COLOR.PERSONAL)
     elseif globalTimeDiff and globalTimeDiff > 0 then
-        self:renderInfo(globalTimeDiff, globalSpeedDiff, Splits.COLOR.SLOWER, Id)
+        self:renderInfo(globalTimeDiff, globalSpeedDiff, Splits.COLOR.SLOWER)
     elseif personalTimeDiff and personalTimeDiff > 0 then
-        self:renderInfo(personalTimeDiff, personalSpeedDiff, Splits.COLOR.SLOWER, Id)
+        self:renderInfo(personalTimeDiff, personalSpeedDiff, Splits.COLOR.SLOWER)
     end
 end
 
@@ -94,14 +83,14 @@ function Splits:finish()
     self:addSplit("Hunter")
 end
 
-function Splits:renderInfo(timeDiff, speedDiff, color, Id)
+function Splits:renderInfo(timeDiff, speedDiff, color)
     local timeStr = ("%s%s%ss"):format(color.hex, (timeDiff < 0 and "-" or "+"), msToTimeStr(math.abs(timeDiff), false, true))
 
     local speedStr = ""
     if speedDiff then
-        local speedColor = speedDiff < 0 and Splits.COLOR.SPEED_FASTER or Splits.COLOR.SPEED_FASTER
+        local speedColor = speedDiff < 0 and Splits.COLOR.SPEED_SLOWER.hex or Splits.COLOR.SPEED_FASTER.hex
         speedStr = (" %s(%s%.1f km/h)#FFFFFF"):format(speedColor, (speedDiff < 0 and "" or "+"), speedDiff)
     end
 
-    outputChatBox((":Splits: %s%s (PickupId: %d)"):format(timeStr, speedStr, Id), 255, 255, 255, true)
+    outputChatBox((":Splits: %s%s"):format(timeStr, speedStr), 255, 255, 255, true)
 end
