@@ -197,6 +197,13 @@ function Map:broadcastToptimes(players)
     end
 end
 
+function Map:sendSplits(player)
+    local globalSplits = self.m_DatabaseMap:getBestSplits()
+    local personalSplits = self.m_DatabaseMap:getSplitsFromPlayer(player)
+
+    player:triggerEvent("initSplits", globalSplits, personalSplits)
+end
+
 -- ==================== PLAYER REMOVAL ====================
 
 -- Clean up all state for a player (quit or disconnect).

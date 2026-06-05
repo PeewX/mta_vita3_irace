@@ -363,6 +363,7 @@ function TimeTrial:onDownloadFinished()
     if not self.m_CurrentMap then return end
 
     self.m_CurrentMap:sendToptimes(player)
+    self.m_CurrentMap:sendSplits(player)
     callClientFunction(player, "forceToptimesOpen")
 
     if not self.m_Is_Running then

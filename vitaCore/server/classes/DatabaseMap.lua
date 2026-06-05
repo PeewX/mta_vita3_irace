@@ -6,13 +6,14 @@ function DatabaseMap:constructor(sMapname)
     local result = sql:queryFetchSingle("SELECT * FROM ??_maps WHERE mapname = ?", sql:getPrefix(), sMapname)
     self.m_Mapname = sMapname
     self.m_MapID = result and result.ID or false
-    self.m_Toptimes = result and self:loadToptimes() or {}
-    self.m_Timings = result and self:loadSplits() or {}
     self.m_Ratings = result and fromJSON(result.ratings) or {}
     self.m_Timesplayed = result and tonumber(result.timesplayed) or 0
     self.m_TimePlayed = result and tonumber(result.timeplayed) or 0
 
-    if not result then
+    if result then
+        self:loadToptimes()
+        self:fetchBestSplits()
+    else
         local _, _, insertID = sql:queryFetch("INSERT INTO ??_maps (mapname) VALUES (?)", sql:getPrefix(), self.m_Mapname)
         self.m_MapID = insertID
     end
@@ -32,14 +33,29 @@ function DatabaseMap:loadToptimes()
         end
     end
 
-    return toptimes
+    self.m_Toptimes = toptimes
 end
 
-function DatabaseMap:loadSplits()
-    local result = sql:queryFetchSingle("SELECT PlayerId, Splits FROM ??_map_records WHERE MapId = ? AND Splits != '' AND Splits != '[[]]' ORDER BY Time ASC LIMIT 1",
+local function fixLegacySplits(jsonString)
+    if jsonString then
+        local data = fromJSON(jsonString)
+        if data and data.timings then
+            return data.timings
+        elseif data then return data
+        else return {} end
+    end
+end
+
+function DatabaseMap:fetchBestSplits()
+    local result = sql:queryFetchSingle("SELECT PlayerId, Splits FROM ??_map_records WHERE MapId = ? AND Splits IS NOT NULL ORDER BY Time ASC LIMIT 1",
         sql:getPrefix(), self.m_MapID)
 
-    return result and fromJSON(result.Splits) or {}
+    self.m_GlobalBestSplits = result and fixLegacySplits(result.Splits) or {}
+    self.m_GlobalBestSplitsBy = result and result.PlayerId or false
+end
+
+function DatabaseMap:getBestSplits()
+    return self.m_GlobalBestSplits
 end
 
 function DatabaseMap:addNewToptime(player, time, splits)
@@ -63,7 +79,7 @@ function DatabaseMap:addNewToptime(player, time, splits)
 
     PlayerManager:getSingleton():requestGhost(player, self.m_MapID)
 
-    self.m_Toptimes = self:loadToptimes()
+    self:loadToptimes()
 
     -- Check for previous Top 12 player
     local new12 = self.m_Toptimes[12]
@@ -83,7 +99,7 @@ end
 function DatabaseMap:backfillSplitsAndGhost(player, time, splits)
     -- Old records doesn't have splits or a ghost, add them even if the time is slower
 
-    local result = sql:queryFetchSingle("SELECT Splits, Ghost IS NOT NULL as HasGhost FROM ??_map_records WHERE MapId = ? AND PlayerId = ?;",
+    local result = sql:queryFetchSingle("SELECT Splits, Ghost IS NOT NULL as HasGhost FROM ??_map_records WHERE MapId = ? AND PlayerId = ?",
         sql:getPrefix(), self.m_MapID, player:getID())
 
     if result then
@@ -111,6 +127,13 @@ function DatabaseMap:backfillSplitsAndGhost(player, time, splits)
     end
 end
 
+function DatabaseMap:getSplitsFromPlayer(player)
+    local result = sql:queryFetchSingle("SELECT Splits FROM ??_map_records WHERE MapId = ? AND PlayerId = ?",
+        sql:getPrefix(), self.m_MapID, player:getID())
+
+    return result and fixLegacySplits(result.Splits) or {}
+end
+
 function DatabaseMap:getToptimeFromPlayer(PlayerID)
     for i, v in pairs(self.m_Toptimes) do
         if v.PlayerID == PlayerID then
@@ -123,7 +146,7 @@ end
 
 function DatabaseMap:sendToptimes(player)
     if player then
-        callClientFunction(player, "setToptimeTable", self.m_Toptimes, self.m_Timings.PlayerID)
+        callClientFunction(player, "setToptimeTable", self.m_Toptimes, self.m_GlobalBestSplitsBy)
     end
     return false
 end
