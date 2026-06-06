@@ -187,19 +187,19 @@ function Map:recordFinish(player, finishTime, splits)
     return improved, hadToptime, oldPosition
 end
 
-function Map:sendToptimes(player)
+function Map:sendToptimes(player, forceOpen)
     local toptimes = self.m_DatabaseMap.m_Toptimes
     local bestSplitsBy = self.m_DatabaseMap.m_GlobalBestSplitsBy
 
-    player:triggerEvent("initToptimes", toptimes, bestSplitsBy)
+    player:triggerEvent("initToptimes", toptimes, bestSplitsBy, forceOpen)
 end
 
-function Map:broadcastToptimes(players)
+function Map:broadcastToptimes(players, forceOpen)
     local toptimes = self.m_DatabaseMap.m_Toptimes
     local bestSplitsBy = self.m_DatabaseMap.m_GlobalBestSplitsBy
 
-    for _, player in pairs(players) do
-        player:triggerEvent("initToptimes", toptimes, bestSplitsBy)
+    for player in pairs(players) do
+        player:triggerEvent("initToptimes", toptimes, bestSplitsBy, player == forceOpen)
     end
 end
 

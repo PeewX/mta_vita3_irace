@@ -121,9 +121,10 @@ function forceToptimesOpen()
 	end
 end
 
-function setToptimeTable(ttable, timings)
+function setToptimeTable(ttable, timings, forceOpen)
 	toptimeTable = ttable
 	topTimingPlayerID = timings
+	if forceOpen then forceToptimesOpen() end
 end
 addEvent("initToptimes", true)
 addEventHandler("initToptimes", localPlayer, setToptimeTable)

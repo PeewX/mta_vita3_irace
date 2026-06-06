@@ -65,42 +65,40 @@ end
 -- ==================== JOIN / QUIT ====================
 
 function TimeTrial:onJoin()
-    local player = client
-    if self.m_Players[player] then return end
+    if self.m_Players[client] then return end
 
-    self.m_Players[player] = true
-    player:setData("gameMode",  self.m_GamemodeId)
-    player:setData("state",     "joined")
-    player:setData("ghostmod",  true)
-    player:setData("mapname",   self.m_Element:getData("mapname"))
-    player:setData("nextmap",   self.m_Element:getData("nextmap"))
-    player:setDimension(self.m_GamemodeId)
+    self.m_Players[client] = true
+    client:setData("gameMode",  self.m_GamemodeId)
+    client:setData("state",     "joined")
+    client:setData("ghostmod",  true)
+    client:setData("mapname",   self.m_Element:getData("mapname"))
+    client:setData("nextmap",   self.m_Element:getData("nextmap"))
+    client:setDimension(self.m_GamemodeId)
 
-    toggleControl(player, "enter_exit", false)
-    bindKey(player, "F",     "down", bind(self.onRespawnKey, self))
-    bindKey(player, "enter", "down", bind(self.onRespawnKey, self))
+    toggleControl(client, "enter_exit", false)
+    bindKey(client, "F",     "down", bind(self.onRespawnKey, self))
+    bindKey(client, "enter", "down", bind(self.onRespawnKey, self))
 
-    callClientFunction(player, "showGUIComponents", "nextMap", "mapdisplay", "money")
-    player:triggerEvent("addNotification", 2, 15, 150, 190, "You joined 'TimeTrial'.")
-    player:triggerEvent("hideSelection")
+    client:callFunction("showGUIComponents", "nextMap", "mapdisplay", "money")
+    client:triggerEvent("addNotification", 2, 15, 150, 190, "You joined 'TimeTrial'.")
+    client:triggerEvent("hideSelection")
 
-    outputChatBoxToGamemode(("#CCFF66:JOIN: #FFFFFF%s#FFFFFF has joined the gamemode."):format(player:getName()), self.m_GamemodeId, 255, 255, 255, true)
+    outputChatBoxToGamemode(("#CCFF66:JOIN: #FFFFFF%s#FFFFFF has joined the gamemode."):format(client:getName()), self.m_GamemodeId, 255, 255, 255, true)
 
     if not self.m_CurrentMap then
         self:_loadMap(self.m_NextMapname)
     else
         -- Map already loaded: set up and spawn the player
-        self:_setupPlayer(player)
+        self:_setupPlayer(client)
         if self.m_Is_Running then
             -- Late join during an active map: start them with a countdown
-            self:_spawnPlayerAtStart(player)
-            self:_runPlayerCountdown(player)
+            self:_spawnPlayerAtStart(client)
+            self:_runPlayerCountdown(client)
         end
     end
 end
 
-function TimeTrial:onQuit(client)
-    local player = client
+function TimeTrial:onQuit(player)
     if not self.m_Players[player] then return end
 
     self:_removePlayer(player)
@@ -129,13 +127,13 @@ function TimeTrial:onPlayerDisconnect()
 end
 
 function TimeTrial:onPlayerWasted()
-    if not isInGamemode(source, self.m_GamemodeId) then return end
+    if not self.m_Players[source] then return end
     if not self.m_Is_Running then return end
     self:_respawnPlayer(source)
 end
 
 function TimeTrial:onRespawnKey(player)
-    if not isInGamemode(player, self.m_GamemodeId) then return end
+    if not self.m_Players[player] then return end
     if not self.m_Is_Running then return end
     if not self.m_CurrentMap then return end
     if not self.m_CurrentMap:canRespawn(player) then return end
@@ -202,11 +200,11 @@ end
 function TimeTrial:_onLobbyTick()
     if self.m_Is_Running then return end
 
-    local players = getGamemodePlayers(self.m_GamemodeId)
-    if #players == 0 then return end
+    local playersCount = table.size(self.m_Players)
+    if playersCount == 0 then return end
 
     local readyCount = 0
-    for _, p in pairs(players) do
+    for p in pairs(self.m_Players) do
         if p:getData("state") == "ready" then
             readyCount = readyCount + 1
         end
@@ -220,7 +218,7 @@ function TimeTrial:_onLobbyTick()
     end
 
     -- Start early if 80 % or more are ready, or on the last tick
-    if remaining == 1 or (#players > 0 and readyCount / #players >= 0.8) then
+    if remaining == 1 or (playersCount > 0 and readyCount / playersCount >= 0.8) then
         if isTimer(self.m_LobbyTimer) then
             killTimer(self.m_LobbyTimer)
         end
@@ -232,8 +230,7 @@ end
 
 function TimeTrial:_startGlobalCountdown()
     local duration = self.m_CurrentMap:getDuration()
-    local players = getGamemodePlayers(self.m_GamemodeId)
-    for _, player in pairs(players) do
+    for player in pairs(self.m_Players) do
         if isPlayerAlive(player) then
             player:triggerEvent("ttMapStart", duration)
         end
@@ -266,7 +263,7 @@ end
 -- Sends the map to the client and spawns the player in their vehicle (frozen
 -- until the countdown ends). Called after the map resource has started.
 function TimeTrial:_setupPlayer(player)
-    callClientFunction(player, "spectateEnd")
+    player:callFunction("spectateEnd")
 
     self.m_CurrentMap:sendToPlayer(player)
 
@@ -311,77 +308,73 @@ end
 -- ==================== PLAYER FINISH ====================
 
 function TimeTrial:onPlayerFinish(finishTime, splits)
-    local player = client
-    if not player or not self.m_Players[player] then return end
+    if not self.m_Players[client] then return end
     if not self.m_CurrentMap then return end
     if not finishTime then return end
-    if not self.m_CurrentMap:isAttempt(player) then return end
+    if not self.m_CurrentMap:isAttempt(client) then return end
 
     -- Mark attempt as over
-    self.m_CurrentMap:onAttemptEnd(player)
-    player:triggerEvent("ttAttemptFinished")
+    self.m_CurrentMap:onAttemptEnd(client)
+    client:triggerEvent("ttAttemptFinished")
 
     -- Record toptime
-    local improved, hadToptime = self.m_CurrentMap:recordFinish(player, finishTime, splits)
+    local improved, hadToptime = self.m_CurrentMap:recordFinish(client, finishTime, splits)
 
     if improved then
-        callClientFunction(player, "forceToptimesOpen")
-        local tInfo, tPos = self.m_CurrentMap.m_DatabaseMap:getToptimeFromPlayer(player.m_ID)
-        outputChatBoxToGamemode((":TOPTIME:#FFFFFF %s#FFFFFF finished (%s) - position %d."):format(_getPlayerName(player), msToTimeStr(tInfo.time), tPos), self.m_GamemodeId, 148, 214, 132, true)
+        local tInfo, tPos = self.m_CurrentMap.m_DatabaseMap:getToptimeFromPlayer(client:getID())
+        outputChatBoxToGamemode((":TOPTIME:#FFFFFF %s#FFFFFF finished (%s) - position %d."):format(_getPlayerName(client), msToTimeStr(tInfo.time), tPos), self.m_GamemodeId, 148, 214, 132, true)
         if tPos <= 12 and not hadToptime then
-            player:setData("TopTimes",       player:getData("TopTimes") + 1)
-            player:setData("TopTimeCounter", player:getData("TopTimeCounter") + 1)
+            client:setData("TopTimes",       client:getData("TopTimes") + 1)
+            client:setData("TopTimeCounter", client:getData("TopTimeCounter") + 1)
         end
-        self.m_CurrentMap:broadcastToptimes(getGamemodePlayers(self.m_GamemodeId))
+        self.m_CurrentMap:broadcastToptimes(self.m_Players, client)
     else
         local timeStr = msToTimeStr(finishTime)
-        player:triggerEvent("addNotification", 2, 200, 200, 50, ("Finished: %s"):format(timeStr))
-        outputChatBox(("#96c87c:FINISH: #ffffff%s#ffffff finished the map (%s)."):format(player:getName(), timeStr), player, 255, 255, 255, true)
+        client:triggerEvent("addNotification", 2, 200, 200, 50, ("Finished: %s"):format(timeStr))
+        outputChatBox(("#96c87c:FINISH: #ffffff%s#ffffff finished the map (%s)."):format(client:getName(), timeStr), client, 255, 255, 255, true)
     end
 
     -- Points for finishing
-    if not self:_hasFinished(player) then
-        player:setData("Points", player:getData("Points") + 50)
-        player:setData("hunterReachedCounter", player:getData("hunterReachedCounter") + 1)
-        outputChatBox("#996633:Points: #ffffff You received 50 points for finishing the map.", player, 255, 255, 255, true)
-        addPlayerArchivement(player, 9)
+    if not self:_hasFinished(client) then
+        client:setData("Points", client:getData("Points") + 50)
+        client:setData("hunterReachedCounter", client:getData("hunterReachedCounter") + 1)
+        outputChatBox("#996633:Points: #ffffff You received 50 points for finishing the map.", client, 255, 255, 255, true)
+        addPlayerArchivement(client, 9)
     end
 
     -- Add to ranking board
-    self:_addRankingEntry(player, finishTime)
+    self:_addRankingEntry(client, finishTime)
 
-    player:setData("state", "dead")
-    player:setAlpha(0)
-    callClientFunction(player, "spectateStart")
+    client:setData("state", "dead")
+    client:setAlpha(0)
+    client:callFunction("spectateStart")
 end
 
 -- ==================== DOWNLOAD FINISHED ====================
 
 function TimeTrial:onDownloadFinished()
-    local player = client
-    if not isInGamemode(player, self.m_GamemodeId) then return end
+    if not self.m_Players[client] then return end
     if not self.m_CurrentMap then return end
 
-    self.m_CurrentMap:sendToptimes(player)
-    self.m_CurrentMap:sendSplits(player)
-    callClientFunction(player, "forceToptimesOpen")
+    self.m_CurrentMap:sendToptimes(client, true)
+    self.m_CurrentMap:sendSplits(client)
 
     if not self.m_Is_Running then
-        player:setData("state", "ready")
+        client:setData("state", "ready")
         return
     end
 
     -- Late join during a running map
     local duration = self.m_CurrentMap:getDuration()
     local timeLeft = self.m_CurrentMap:getTimerLeft()
-    player:triggerEvent("ttMapStarted", duration, timeLeft)
+    client:triggerEvent("ttMapStarted", duration, timeLeft)
 
     -- Make sure spawn is assigned and vehicle exists
-    if not self.m_CurrentMap.m_PlayerSpawns[player] then
-        self.m_CurrentMap:assignSpawn(player)
+    if not self.m_CurrentMap.m_PlayerSpawns[client] then
+        self.m_CurrentMap:assignSpawn(client)
     end
-    self:_spawnPlayerAtStart(player)
-    self:_runPlayerCountdown(player)
+    self:_spawnPlayerAtStart(client)
+    self:_runPlayerCountdown(client)
 end
 
 -- ==================== RESPAWN ====================
@@ -421,29 +414,28 @@ function TimeTrial:_respawnPlayer(player)
 end
 
 function TimeTrial:_runPlayerCountdown(player)
-    if not isElement(player) or not isInGamemode(player, self.m_GamemodeId) then return end
+    if not isElement(player) or not self.m_Players[player] then return end
     player:triggerEvent("ttAttemptStart")
 end
 
 -- Called when the client reports that it has unfrozen its own vehicle at GO.
 -- Syncs ghost-mode off, damage-proof off, and starts the attempt timer.
 function TimeTrial:onPlayerAttemptStarted()
-    local player = client
-    if not self.m_Players[player] then return end
+    if not self.m_Players[client] then return end
     if not self.m_CurrentMap then return end
 
-    if isElement(player.vehicle) then
-        player.vehicle:setDamageProof(false)
-        player.vehicle:setFrozen(false)   -- ensure server-side sync (MTA issue #442)
-        player:setData("ghostmod", false)
+    if isElement(client.vehicle) then
+        client.vehicle:setDamageProof(false)
+        client.vehicle:setFrozen(false)   -- ensure server-side sync (MTA issue #442)
+        client:setData("ghostmod", false)
     end
 
-    player:setData("state", "alive")
+    client:setData("state", "alive")
 
-    if not self.m_CurrentMap:isAttempt(player) then
-        player.m_respawnCountdown = false
-        if not self.m_CurrentMap:canRespawn(player) then return end
-        self.m_CurrentMap:onAttemptStart(player)
+    if not self.m_CurrentMap:isAttempt(client) then
+        client.m_respawnCountdown = false
+        if not self.m_CurrentMap:canRespawn(client) then return end
+        self.m_CurrentMap:onAttemptStart(client)
     end
 end
 

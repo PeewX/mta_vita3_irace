@@ -42,6 +42,10 @@ function Player:getGamemode()
     return self:getData("gameMode") or 0
 end
 
+function Player:isGamemode(gamemode)
+    return self:getGamemode() == gamemode
+end
+
 function Player:callFunction(...)
     callClientFunction(self, ...)
 end
