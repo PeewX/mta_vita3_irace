@@ -46,6 +46,11 @@ function Player:isGamemode(gamemode)
     return self:getGamemode() == gamemode
 end
 
+local aliveTable = {["alive"] = true, ["not ready"] = true, ["ready"] = true}
+function Player:isAlive()
+    return aliveTable[self:getData("state")]
+end
+
 function Player:callFunction(...)
     callClientFunction(self, ...)
 end

@@ -231,17 +231,13 @@ end
 function TimeTrial:_startGlobalCountdown()
     local duration = self.m_CurrentMap:getDuration()
     for player in pairs(self.m_Players) do
-        if isPlayerAlive(player) then
-            player:triggerEvent("ttMapStart", duration)
-        end
+        if player:isAlive() then player:triggerEvent("ttMapStart", duration) end
     end
 
     -- Wait for the sound intro, then start the map and trigger client countdowns
     self.m_CountdownTimer = setTimer(function()
         for player in pairs(self.m_Players) do
-            if isPlayerAlive(player) then
-                player:triggerEvent("ttAttemptStart")
-            end
+            if player:isAlive() then player:triggerEvent("ttAttemptStart") end
         end
 
         self.m_CountdownDoneTimer = setTimer(function()
@@ -250,9 +246,7 @@ function TimeTrial:_startGlobalCountdown()
 
             local timeLeft = self.m_CurrentMap:getTimerLeft()
             for player in pairs(self.m_Players) do
-                if isPlayerAlive(player) then
-                    player:triggerEvent("ttUpdateMapTime", duration, timeLeft)
-                end
+                if player:isAlive() then player:triggerEvent("ttUpdateMapTime", duration, timeLeft) end
             end
         end, 3000, 1)
     end, 3000, 1)
