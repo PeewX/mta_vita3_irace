@@ -31,6 +31,7 @@ local restrictedFunctions = {
     ["require"]                  = true,
     ["debug"]                    = true,
     ["coroutine"]                = true,
+    ["addVehicleUpgrade"]        = true,
 
     -- GUI
     ["guiCreateBrowser"]     = true,
@@ -92,10 +93,11 @@ local _loadstring = loadstring
 local _addEventHandler = addEventHandler
 local _removeEventHandler = removeEventHandler
 local _playSound = playSound
-
 local _setTimer = setTimer
 local _setCloudsEnabled = setCloudsEnabled
 local _setWeather = setWeather
+local _setVehicleColor = setVehicleColor
+local _setVehicleHeadLightColor = setVehicleHeadLightColor
 local _engineSetModelLODDistance = engineSetModelLODDistance
 local _dxCreateShader = dxCreateShader
 
@@ -183,6 +185,16 @@ local function restoreWrappers()
 
     setCloudsEnabled = function(_)
         return _setCloudsEnabled(false)
+    end
+
+    setVehicleColor = function(elem, ...)
+        if isElement(elem) and elem.controller and elem.controller.type == "player" then return false end
+        _setVehicleColor(elem, ...)
+    end
+
+    setVehicleHeadLightColor = function(elem, ...)
+        if isElement(elem) and elem.controller and elem.controller.type == "player" then return false end
+        return _setVehicleHeadLightColor(elem, ...)
     end
 
     engineLoadCOL = function(colPath)
