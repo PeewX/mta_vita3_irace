@@ -51,6 +51,10 @@ function Player:isAlive()
     return aliveTable[self:getData("state")]
 end
 
+function Player:getBoughtVehicleColor()
+    return self:getData("r1"), self:getData("g1"), self:getData("b1"), self:getData("r2"), self:getData("g2"), self:getData("b2")
+end
+
 function Player:callFunction(...)
     callClientFunction(self, ...)
 end
