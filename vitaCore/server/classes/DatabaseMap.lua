@@ -20,7 +20,7 @@ function DatabaseMap:constructor(sMapname)
 end
 
 function DatabaseMap:destructor()
-    sql:queryExec("UPDATE ??_maps SET toptimes = ?, timings = ?, ratings = ?, timesplayed = ? WHERE ID = ?", sql:getPrefix(), toJSON(self.m_Toptimes), toJSON(self.m_Timings), toJSON(self.m_Ratings), self.m_Timesplayed, self.m_MapID)
+    --sql:queryExec("UPDATE ??_maps SET toptimes = ?, timings = ?, ratings = ?, timesplayed = ? WHERE ID = ?", sql:getPrefix(), toJSON(self.m_Toptimes), toJSON(self.m_Timings), toJSON(self.m_Ratings), self.m_Timesplayed, self.m_MapID)
 end
 
 function DatabaseMap:loadToptimes()
@@ -44,8 +44,12 @@ function DatabaseMap:fetchBestSplits()
     self.m_GlobalBestSplitsBy = result and result.PlayerId or false
 end
 
-function DatabaseMap:getBestSplits()
-    return self.m_GlobalBestSplits
+function DatabaseMap:fetchBestGhost()
+    local result = sql:queryFetchSingle("SELECT PlayerId, UNCOMPRESS(Ghost) FROM ??_map_records WHERE MapId = ? AND Ghost IS NOT NULL ORDER BY Time ASC LIMIT 1",
+        sql:getPrefix(), self.m_MapID)
+
+    self.m_GlobalBestGhost = result and result.Ghost or false
+    self.m_GlobalBestGhostBy = result and result.PlayerId or false
 end
 
 function DatabaseMap:addNewToptime(player, time, splits)
@@ -124,6 +128,13 @@ function DatabaseMap:getSplitsFromPlayer(player)
     return result and fromJSON(result.Splits) or {}
 end
 
+function DatabaseMap:getGhostFromPlayer(player)
+    local result = sql:queryFetchSingle("SELECT UNCOMPRESS(Ghost) FROM ??_map_records WHERE MapId = ? AND PlayerId = ?",
+        sql:getPrefix(), self.m_MapID, player:getID())
+
+    return result and result["UNCOMPRESS(Ghost)"] or false
+end
+
 function DatabaseMap:getToptimeFromPlayer(PlayerID)
     for i, v in pairs(self.m_Toptimes) do
         if v.PlayerID == PlayerID then
@@ -175,6 +186,12 @@ function DatabaseMap.saveGhost(player, MapId, GhostData)
     sql:queryExec("UPDATE ??_map_records SET Ghost = COMPRESS(?) WHERE MapId = ? AND PlayerId = ?",
         sql:getPrefix(), GhostData, MapId, player:getID())
 end
+
+-- Short getters
+function DatabaseMap:getToptimes() return self.m_Toptimes end
+function DatabaseMap:getBestSplits() return self.m_GlobalBestSplits end
+function DatabaseMap:getBestGhost() return self.m_GlobalBestGhost end
+function DatabaseMap:getBestSplitsAndGhost() return self.m_GlobalBestSplitsBy, self.m_GlobalBestGhostBy end
 
 -- =============================================================================================================
 -- Migrate toptimes

@@ -1,6 +1,6 @@
 MovementRecorder = inherit(Object)
 
-local POSITION_DELTA_THRESHOLD = 0.05
+local POSITION_DELTA_THRESHOLD = 0.02
 local ROTATION_DELTA_THRESHOLD = 0.5
 
 local function encodePos(v)
@@ -177,7 +177,11 @@ function MovementRecorder:updateFrame(frameA, frameB, alpha)
     end
 end
 
-function MovementRecorder:decodeRecord(encodedString)
+function MovementRecorder:setEncodedRecord(encodedString)
+	self.m_Record = MovementRecorder.decodeRecord(encodedString)
+end
+
+function MovementRecorder.decodeRecord(encodedString)
 	local record = {}
 	local len = string.len(encodedString)
 	local offset = 1

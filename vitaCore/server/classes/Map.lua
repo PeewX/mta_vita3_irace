@@ -188,26 +188,31 @@ function Map:recordFinish(player, finishTime, splits)
 end
 
 function Map:sendToptimes(player, forceOpen)
-    local toptimes = self.m_DatabaseMap.m_Toptimes
-    local bestSplitsBy = self.m_DatabaseMap.m_GlobalBestSplitsBy
-
-    player:triggerEvent("initToptimes", toptimes, bestSplitsBy, forceOpen)
+    local toptimes = self.m_DatabaseMap:getToptimes()
+    local bestSplitsBy, bestGhostBy = self.m_DatabaseMap:getBestSplitsAndGhost()
+    player:triggerEvent("initToptimes", toptimes, bestSplitsBy, bestGhostBy, forceOpen)
 end
 
 function Map:broadcastToptimes(players, forceOpen)
-    local toptimes = self.m_DatabaseMap.m_Toptimes
-    local bestSplitsBy = self.m_DatabaseMap.m_GlobalBestSplitsBy
+    local toptimes = self.m_DatabaseMap:getToptimes()
+    local bestSplitsBy, bestGhostBy = self.m_DatabaseMap:getBestSplitsAndGhost()
 
     for player in pairs(players) do
-        player:triggerEvent("initToptimes", toptimes, bestSplitsBy, player == forceOpen)
+        player:triggerEvent("initToptimes", toptimes, bestSplitsBy, bestGhostBy, player == forceOpen)
     end
 end
 
 function Map:sendSplits(player)
     local globalSplits = self.m_DatabaseMap:getBestSplits()
     local personalSplits = self.m_DatabaseMap:getSplitsFromPlayer(player)
-
     player:triggerEvent("initSplits", globalSplits, personalSplits)
+end
+
+function Map:sendGhost(player)
+    local ghostData = self.m_DatabaseMap:getGhostFromPlayer(player)
+    if not ghostData then ghostData = self.m_DatabaseMap:getBestGhost() end
+
+    player:triggerLatentEvent("serverSendGhost", ghostData)
 end
 
 -- ==================== PLAYER REMOVAL ====================

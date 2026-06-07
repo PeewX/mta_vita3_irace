@@ -352,11 +352,9 @@ function TimeTrial:onDownloadFinished()
 
     self.m_CurrentMap:sendToptimes(client, true)
     self.m_CurrentMap:sendSplits(client)
+    self.m_CurrentMap:sendGhost(client)
 
-    if not self.m_Is_Running then
-        client:setData("state", "ready")
-        return
-    end
+    if not self.m_Is_Running then client:setData("state", "ready") return end
 
     -- Late join during a running map
     local duration = self.m_CurrentMap:getDuration()

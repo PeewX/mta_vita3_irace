@@ -9,6 +9,7 @@ local toptimeX = 435
 local toptimeTimer = false
 local toptimeTable = false
 local topTimingPlayerID = false
+local topGhostPlayerID = false
 
 local normalColor = tocolor(255, 255, 255)
 local personalColor = tocolor(255, 255, 200)
@@ -121,9 +122,10 @@ function forceToptimesOpen()
 	end
 end
 
-function setToptimeTable(ttable, timings, forceOpen)
+function setToptimeTable(ttable, timings, ghost, forceOpen)
 	toptimeTable = ttable
 	topTimingPlayerID = timings
+	topGhostPlayerID = ghost
 	if forceOpen then forceToptimesOpen() end
 end
 addEvent("initToptimes", true)

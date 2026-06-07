@@ -5,7 +5,7 @@
 -- pewx.de // iRace-mta.de // mtasa.de
 --
 TimeTrial = inherit(Singleton)
-addRemoteEvents{"ttMapStart", "ttUpdateMapTime", "ttAttemptStarted", "ttAttemptFinished", "ttMapStopped", "ttAttemptStart", "serverRequestGhost"}
+addRemoteEvents{"ttMapStart", "ttUpdateMapTime", "ttAttemptStarted", "ttAttemptFinished", "ttMapStopped", "ttAttemptStart", "serverRequestGhost", "serverSendGhost"}
 
 function TimeTrial:constructor()
     self.m_Countdown   = Countdown:new()
@@ -22,6 +22,7 @@ function TimeTrial:constructor()
     addEventHandler("ttAttemptFinished",  localPlayer, bind(self.onAttemptFinished,    self))
     addEventHandler("ttMapStopped",       localPlayer, bind(self.onMapStopped,         self))
     addEventHandler("serverRequestGhost", localPlayer, bind(self.onServerRequestGhost, self))
+    addEventHandler("serverSendGhost",    localPlayer, bind(self.onServerSendGhost,    self))
 end
 
 function TimeTrial:onMapStart(duration)
@@ -32,6 +33,10 @@ function TimeTrial:onMapStart(duration)
     self.m_BestTry = 0
     self.m_GhostRecord = MovementRecorder:new(localPlayer.vehicle:getModel())
     self.m_GhostPlayback = MovementRecorder:new(localPlayer.vehicle:getModel())
+
+    if self.m_ReceivedGhost then
+        self.m_GhostPlayback:setEncodedRecord(self.m_ReceivedGhost)
+    end
 end
 
 function TimeTrial:onUpdateMapTime(duration, timeLeft)
@@ -61,7 +66,8 @@ function TimeTrial:onAttemptFinished()
     self.m_GhostRecord:stopRecording()
     self.m_GhostPlayback:stopPlayback()
 
-    local checkpointCount = #Splits:getSingleton():getRecord()
+    if self.m_ReceivedGhost then return end
+    local checkpointCount = table.size(Splits:getSingleton():getRecord())
     if checkpointCount > self.m_BestTry then
         self.m_GhostPlayback.m_Record = self.m_GhostRecord.m_Record
         self.m_BestTry = checkpointCount
@@ -82,7 +88,15 @@ function TimeTrial:onServerRequestGhost(Id)
     self.m_GhostUploads[Id] = #getLatentEventHandles()
 end
 
+function TimeTrial:onServerSendGhost(ghostData, playerId)
+    if not localPlayer:isGamemode(GAMEMODES.TT) then return end
+    if not ghostData then return end
+
+    self.m_ReceivedGhost = ghostData
+end
+
 function TimeTrial:onMapStopped()
+    self.m_ReceivedGhost = false
     self.m_Countdown:stop()
     self.m_TimerWidget:hide()
     delete(self.m_GhostRecord)
