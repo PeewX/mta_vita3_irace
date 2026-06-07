@@ -85,7 +85,8 @@ function TimeTrial:onServerRequestGhost(Id)
     end
 
     triggerLatentServerEvent("clientSendGhost", 2000000, false, localPlayer, Id, self.m_GhostRecord:getEncodedRecord())
-    self.m_GhostUploads[Id] = #getLatentEventHandles()
+    local evhandles = getLatentEventHandles()
+    self.m_GhostUploads[Id] = evhandles[#evhandles]
 end
 
 function TimeTrial:onServerSendGhost(ghostData, playerId)

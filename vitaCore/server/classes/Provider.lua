@@ -21,20 +21,21 @@ function Provider:destructor()
 end
 
 function Provider:refreshProgress()
-    local activedl = {}
+    local finishedDownloads = {}
     for k, v in pairs(self.m_ActiveDL) do
         local player = v.player
         if isElement(player) then
             local handle = v.handle
             local status = getLatentEventStatus(player, handle)
 
+            if not status then table.insert(finishedDownloads, k) end
             if status and status.percentComplete < 100 then
-                activedl[k] = v
                 triggerClientEvent(player, "onDownloadProgressUpdate", resourceRoot, k, status.percentComplete)
             end
         end
     end
 
+    for i = #finishedDownloads, 1, -1 do table.remove(self.m_ActiveDL, i) end
     self.m_RefreshProgress = setTimer(bind(Provider.refreshProgress, self), 200, 1)
 end
 
