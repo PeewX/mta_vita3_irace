@@ -129,6 +129,8 @@ end
 function TimeTrial:onPlayerWasted()
     if not self.m_Players[source] then return end
     if not self.m_Is_Running then return end
+    if not self.m_CurrentMap:isAttempt(source) then return end
+    if isElement(source.raceVehicle) then source.raceVehicle:destroy() end
     self:_respawnPlayer(source)
 end
 
@@ -178,8 +180,8 @@ function TimeTrial:_unloadMap()
     self.m_Element:setData("rankingboard", {})
     self.m_Rankingboard = {}
 
-    for _, veh in pairs(getElementsByType("vehicle")) do
-        if veh:getData("isTTVeh") then veh:destroy() end
+    for _, veh in pairs(self.m_Element.getAllByType("vehicle")) do
+        if isElement(veh) then veh:destroy() end
     end
 
     for player in pairs(self.m_Players) do
@@ -278,7 +280,7 @@ end
 -- Creates a vehicle at the player's assigned spawn. Vehicle is frozen/damage-proof
 -- until released by the countdown.
 function TimeTrial:_spawnPlayerAtStart(player)
-    if isElement(player.vehicle) then player.vehicle:destroy() end
+    if isElement(player.raceVehicle) then player.raceVehicle:destroy() end
 
     local spawn = self.m_CurrentMap:getPlayerSpawn(player)
     if not spawn then return end
@@ -288,17 +290,18 @@ function TimeTrial:_spawnPlayerAtStart(player)
     player:setDimension(self.m_GamemodeId)
 
     local veh = Vehicle(spawn.model, spawn.x, spawn.y, spawn.z, spawn.rx, spawn.ry, spawn.rz, "iRace")
+    veh.isTTVehicle = true
+    veh:setParent(self.m_Element)
     veh:setDimension(self.m_GamemodeId)
     veh:setFrozen(true)
     veh:setDamageProof(true)
     veh:setColor(player:getBoughtVehicleColor())
     veh:setHeadLightColor(player:getBoughtVehicleColor())
     player:warpIntoVehicle(veh)
-    veh:setData("isTTVeh",    true)
-    player:setData("raceVeh",  veh)
     player:setData("ghostmod", true)
     player:setAlpha(255)
     player:setFrozen(false)
+    player.raceVehicle = veh
 end
 
 -- ==================== PLAYER FINISH ====================
@@ -341,8 +344,12 @@ function TimeTrial:onPlayerFinish(finishTime, splits)
     -- Add to ranking board
     self:_addRankingEntry(client, finishTime)
 
+    setTimer(function(veh) if isElement(veh) then destroyElement(veh) end end, 15000, 1, client.raceVehicle)
+    client.raceVehicle:setCollisionsEnabled(false)
+    client:removeFromVehicle()
     client:setData("state", "dead")
     client:setAlpha(0)
+    client:setFrozen(true)
     client:callFunction("spectateStart")
 end
 
@@ -382,7 +389,7 @@ function TimeTrial:_respawnPlayer(player)
 
     player:triggerEvent("ttAttemptFinished")
 
-    if isElement(player.vehicle) then player.vehicle:destroy() end
+    if isElement(player.raceVehicle) then player.raceVehicle:destroy() end
 
     if not self.m_CurrentMap then return end
     local spawn = self.m_CurrentMap:getPlayerSpawn(player)
@@ -393,17 +400,18 @@ function TimeTrial:_respawnPlayer(player)
     player:setDimension(self.m_GamemodeId)
 
     local veh = Vehicle(spawn.model, spawn.x, spawn.y, spawn.z, spawn.rx, spawn.ry, spawn.rz, "iRace")
+    veh.isTTVehicle = true
+    veh:setParent(self.m_Element)
     veh:setDimension(self.m_GamemodeId)
     veh:setFrozen(true)
     veh:setDamageProof(true)
     veh:setColor(player:getBoughtVehicleColor())
     veh:setHeadLightColor(player:getBoughtVehicleColor())
     player:warpIntoVehicle(veh)
-    veh:setData("isTTVeh",    true)
-    player:setData("raceVeh",  veh)
     player:setData("state",    "ready")
     player:setData("ghostmod", true)
     player:setAlpha(255)
+    player.raceVehicle = veh
 
     player:triggerEvent("updateSpawnPositionOnRespawn")
     self:_runPlayerCountdown(player)
@@ -420,10 +428,9 @@ function TimeTrial:onPlayerAttemptStarted()
     if not self.m_Players[client] then return end
     if not self.m_CurrentMap then return end
 
-    if isElement(client.vehicle) then
-        client.vehicle:setDamageProof(false)
-        client.vehicle:setFrozen(false)   -- ensure server-side sync (MTA issue #442)
-        client:setData("ghostmod", false)
+    if isElement(client.raceVehicle) then
+        client.raceVehicle:setDamageProof(false)
+        client.raceVehicle:setFrozen(false)   -- ensure server-side sync (MTA issue #442)
     end
 
     client:setData("state", "alive")
@@ -482,7 +489,7 @@ function TimeTrial:_removePlayer(player)
     self.m_Players[player] = nil
     if self.m_CurrentMap then self.m_CurrentMap:removePlayer(player) end
 
-    if isElement(player.vehicle) then player.vehicle:destroy() end
+    if isElement(player.raceVehicle) then player.raceVehicle:destroy() end
 
     player:setAlpha(0)
     player:setFrozen(true)
