@@ -61,17 +61,17 @@ function toptimeRender()
 				for i = 13, toptimesCount do
 					if toptimeTable[i].PlayerID == localPlayer:getID() then
 						hasTime = true
-						dxDrawText(i .. ".", screenWidth-345+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
-						dxDrawText(msToTimeStr(toptimeTable[i].time), screenWidth-305+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
-						dxDrawText(toptimeTable[i].name, screenWidth-225+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
+						dxDrawText(i .. ".", screenWidth-345+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, personalColor, 1, "default-bold", "left")
+						dxDrawText(msToTimeStr(toptimeTable[i].time), screenWidth-305+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, personalColor, 1, "default-bold", "left")
+						dxDrawText(toptimeTable[i].name, screenWidth-225+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left", "top", false, false, false, true)
 					end
 				end
 			end
 
 			if not hasTime then
-				dxDrawText("-", screenWidth-345+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
-				dxDrawText("-", screenWidth-305+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
-				dxDrawText(localPlayer:getName(), screenWidth-225+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 1, "default-bold", "left", "top", false, false, false, true)
+				dxDrawText("-", screenWidth-345+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, personalColor, 1, "default-bold", "left")
+				dxDrawText("-", screenWidth-305+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, personalColor, 1, "default-bold", "left")
+				dxDrawText(localPlayer:getName(), screenWidth-225+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left", "top", false, false, false, true)
 			end
 		end
 	end
