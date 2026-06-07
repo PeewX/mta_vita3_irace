@@ -13,6 +13,7 @@ function DatabaseMap:constructor(sMapname)
     if result then
         self:loadToptimes()
         self:fetchBestSplits()
+        self:fetchBestGhost()
     else
         local _, _, insertID = sql:queryFetch("INSERT INTO ??_maps (mapname) VALUES (?)", sql:getPrefix(), self.m_Mapname)
         self.m_MapID = insertID

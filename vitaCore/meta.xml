@@ -300,6 +300,7 @@
     <irFile src="files/vitatime.png" />
     <irFile src="files/vitatime2.png" />
     <irFile src="files/toptimes_bg.png" />
+    <irFile src="files/ghost_icon.png" />
     <irFile src="files/vitaMapinfo.png" />
 
     <irFile src="files/background.png" />

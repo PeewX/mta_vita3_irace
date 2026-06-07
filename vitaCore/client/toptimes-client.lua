@@ -8,12 +8,12 @@ local showToptimes = false
 local toptimeX = 435
 local toptimeTimer = false
 local toptimeTable = false
-local topTimingPlayerID = false
+local topSplitsPlayerID = false
 local topGhostPlayerID = false
 
 local normalColor = tocolor(255, 255, 255)
 local personalColor = tocolor(255, 255, 200)
-local timingsColor = tocolor(120, 105, 200)
+local splitsColor = tocolor(120, 105, 200)
 
 function toptimeRender()
 	if showToptimes == true or showToptimes == "closing" then
@@ -25,62 +25,58 @@ function toptimeRender()
 		elseif showToptimes == "closing" and toptimeX >= 435 then
 			showToptimes = false
 		end
-		if toptimeTable == false then showToptimes = false return false end
+		if not toptimeTable then showToptimes = false return end
 		dxDrawImage(screenWidth-436+toptimeX, screenHeight/3, 512,256, "files/toptimes_bg.png",0,0,0,tocolor(255,255,255,255))
 		dxDrawLine(screenWidth-352+toptimeX, screenHeight/3+45, screenWidth, screenHeight/3+45, tocolor(255,255,255,50))
-		dxDrawText ( "Rank",screenWidth-345+toptimeX, screenHeight/3+50, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 0.8)
-		dxDrawText ( "Time",screenWidth-310+toptimeX, screenHeight/3+50, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 0.8)
-		dxDrawText ( "Player",screenWidth-230+toptimeX, screenHeight/3+50, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 0.8)
+		dxDrawText("Rank", screenWidth-345+toptimeX, screenHeight/3+50, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 0.8)
+		dxDrawText("Time", screenWidth-305+toptimeX, screenHeight/3+50, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 0.8)
+		dxDrawText("Player",screenWidth-225+toptimeX, screenHeight/3+50, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 0.8)
 		local isInToptime = false
-		for i = 1, 12, 1 do
-			if toptimeTable[i] then
-				local timeColor = normalColor
+		for i = 1, 12 do
+			local time = toptimeTable[i] and msToTimeStr(toptimeTable[i].time) or "-"
+			local playerName = toptimeTable[i] and toptimeTable[i].name or "-"
+			local color = normalColor
 
-				if topTimingPlayerID == toptimeTable[i].PlayerID then
-					timeColor = timingsColor
-				elseif toptimeTable[i].PlayerID == localPlayer:getID() then
-					timeColor = personalColor
-				end
-
-				if toptimeTable[i].PlayerID == localPlayer:getID() then
-					isInToptime = true
-					dxDrawText ( i..".",screenWidth-345+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, personalColor, 1, "default-bold", "left")
-					dxDrawText ( tostring(msToTimeStr(toptimeTable[i].time)),screenWidth-305+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, timeColor, 1, "default-bold", "left")
-					dxDrawText ( tostring(_getPlayerName(getLocalPlayer())),screenWidth-225+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left", "top",false,false,false,true)
-				else
-					dxDrawText ( i..".",screenWidth-345+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left")
-					dxDrawText ( tostring(msToTimeStr(toptimeTable[i].time)),screenWidth-305+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, timeColor, 1, "default-bold", "left")
-					dxDrawText ( toptimeTable[i].name,screenWidth-225+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left", "top",false,false,false,true)
-				end
-			else
-				dxDrawText ( i..".",screenWidth-345+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left")
-				dxDrawText ( "-",screenWidth-305+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left")
-				dxDrawText ( "-",screenWidth-225+toptimeX, screenHeight/3+50+13*i, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left")
+			if toptimeTable[i] and toptimeTable[i].PlayerID == localPlayer:getID() then
+				isInToptime, color = true, personalColor
 			end
+
+			if toptimeTable[i] and toptimeTable[i].PlayerID == topSplitsPlayerID then
+				color = splitsColor
+			end
+
+			local rowY = screenHeight/3+50+13*i
+			dxDrawText(i .. ".",   screenWidth-345+toptimeX, rowY, screenWidth, screenHeight/3+80, color, 1, "default-bold", "left")
+			dxDrawText(time, 	   screenWidth-305+toptimeX, rowY, screenWidth, screenHeight/3+80, color, 1, "default-bold", "left")
+			dxDrawText(playerName, screenWidth-225+toptimeX, rowY, screenWidth, screenHeight/3+80, normalColor, 1, "default-bold", "left", "top", false, false, false, true)
+
+			if toptimeTable[i] and toptimeTable[i].PlayerID == topGhostPlayerID then
+                dxDrawImage(screenWidth-250+toptimeX, rowY - 1, 16, 16, "files/ghost_icon.png", 0, 0, 0, splitsColor)
+            end
 		end
-		
-		if isInToptime == false and toptimeTable then
-			local hasToptime = false
-			if #toptimeTable > 12 then
-				for i = 13,#toptimeTable, 1 do
+
+		local hasTime = false
+		if toptimeTable and not isInToptime then
+			if toptimesCount > 12 then
+				for i = 13, toptimesCount do
 					if toptimeTable[i].PlayerID == localPlayer:getID() then
-						hasToptime = true
-						dxDrawText ( i..".",screenWidth-345+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
-						dxDrawText ( tostring(msToTimeStr(toptimeTable[i].time)),screenWidth-305+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
-						dxDrawText ( getPlayerName(getLocalPlayer()),screenWidth-225+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
+						hasTime = true
+						dxDrawText(i .. ".", screenWidth-345+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
+						dxDrawText(msToTimeStr(toptimeTable[i].time), screenWidth-305+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
+						dxDrawText(toptimeTable[i].name, screenWidth-225+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
 					end
 				end
 			end
-			
-			if hasToptime == false then
-				dxDrawText ( "-",screenWidth-345+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
-				dxDrawText ( "-",screenWidth-305+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
-				dxDrawText ( _getPlayerName(getLocalPlayer()),screenWidth-225+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 1, "default-bold", "left", "top",false,false,false,true)			
+
+			if not hasTime then
+				dxDrawText("-", screenWidth-345+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
+				dxDrawText("-", screenWidth-305+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,200,255), 1, "default-bold", "left")
+				dxDrawText(localPlayer:getName(), screenWidth-225+toptimeX, screenHeight/3+50+13*13, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 1, "default-bold", "left", "top", false, false, false, true)
 			end
 		end
 	end
 end
-addEventHandler("onClientRender", getRootElement(), toptimeRender, false, "low+1")
+addEventHandler("onClientRender", root, toptimeRender, false, "low+1")
 
 bindKey ( "F5", "down", function(key, keyState)
 	if toptimeTable == false then return false end
@@ -113,10 +109,11 @@ function forceToptimesOpen()
 	end
 end
 
-function setToptimeTable(ttable, timings, ghost, forceOpen)
+function setToptimeTable(ttable, splitsId, ghostId, forceOpen)
 	toptimeTable = ttable
-	topTimingPlayerID = timings
-	topGhostPlayerID = ghost
+	toptimesCount = #ttable
+	topSplitsPlayerID = splitsId
+	topGhostPlayerID = ghostId
 	if forceOpen then forceToptimesOpen() end
 end
 addEvent("initToptimes", true)
