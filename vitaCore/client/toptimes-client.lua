@@ -15,15 +15,6 @@ local normalColor = tocolor(255, 255, 255)
 local personalColor = tocolor(255, 255, 200)
 local timingsColor = tocolor(120, 105, 200)
 
-function getNameFromAccountName(accountname)
-	for i,v in pairs(getElementsByType ( "userAccount" )) do
-		if getElementData(v, "AccountName") == accountname then
-			return getElementData(v, "PlayerName")
-		end
-	end
-	return accountname
-end
-
 function toptimeRender()
 	if showToptimes == true or showToptimes == "closing" then
 		if showToptimes == true and toptimeX > 0 then
@@ -35,7 +26,7 @@ function toptimeRender()
 			showToptimes = false
 		end
 		if toptimeTable == false then showToptimes = false return false end
-		dxDrawImage(screenWidth-436+toptimeX, screenHeight/3, 512,256, "files/vitaToptimes.png",0,0,0,tocolor(255,255,255,255))
+		dxDrawImage(screenWidth-436+toptimeX, screenHeight/3, 512,256, "files/toptimes_bg.png",0,0,0,tocolor(255,255,255,255))
 		dxDrawLine(screenWidth-352+toptimeX, screenHeight/3+45, screenWidth, screenHeight/3+45, tocolor(255,255,255,50))
 		dxDrawText ( "Rank",screenWidth-345+toptimeX, screenHeight/3+50, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 0.8)
 		dxDrawText ( "Time",screenWidth-310+toptimeX, screenHeight/3+50, screenWidth, screenHeight/3+80, tocolor(255,255,255,255), 0.8)
