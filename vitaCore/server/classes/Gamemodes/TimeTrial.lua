@@ -9,7 +9,6 @@ TimeTrial = inherit(Singleton)
 addRemoteEvents {"joinTT", "playerFinishedMap", "downloadMapFinished", "mapReady", "playerAttemptStarted"}
 
 local LOBBY_INTERVAL   = 5000            -- ms between lobby timer ticks
-local LOBBY_TICKS      = 6              -- 6 * 5000 = 30 seconds of lobby wait
 
 -- ==================== CONSTRUCTOR ====================
 
@@ -166,7 +165,7 @@ end
 
 function TimeTrial:_unloadMap()
     outputServerLog("Unloading map: " .. self.m_CurrentMap:getName())
-    if isTimer(self.m_LobbyTimer) then killTimer(self.m_LobbyTimer) end
+    if self.m_LobbyPulse then delete(self.m_LobbyPulse) end
     if isTimer(self.m_CountdownTimer) then killTimer(self.m_CountdownTimer) end
     if isTimer(self.m_CountdownDoneTimer) then killTimer(self.m_CountdownDoneTimer) end
 
@@ -196,34 +195,32 @@ end
 
 function TimeTrial:_startLobbyCountdown()
     if self.m_Is_Running then return end
-    self.m_LobbyTimer = setTimer(bind(self._onLobbyTick, self), LOBBY_INTERVAL, LOBBY_TICKS)
+    self.m_LobbyPulse = TimedPulse:new(LOBBY_INTERVAL)
+    self.m_LobbyPulse:registerHandler(bind(self._onLobbyTick, self))
 end
 
-function TimeTrial:_onLobbyTick()
+function TimeTrial:_onLobbyTick(pulses)
     if self.m_Is_Running then return end
 
     local playersCount = table.size(self.m_Players)
     if playersCount == 0 then return end
 
     local readyCount = 0
-    for p in pairs(self.m_Players) do
-        if p:getData("state") == "ready" then
-            readyCount = readyCount + 1
-        end
+    for player in pairs(self.m_Players) do
+        if player:isReady() then readyCount = readyCount + 1 end
     end
 
-    local _, remaining = getTimerDetails(self.m_LobbyTimer)
-
-    -- At halfway point show "waiting" hint
-    if remaining == 3 then
+    -- Show waiting hint after 15 seconds
+    if pulses == 3 then
         outputChatBoxToGamemode("Waiting for players...", self.m_GamemodeId, 200, 200, 200, false)
     end
 
-    -- Start early if 80 % or more are ready, or on the last tick
-    if remaining == 1 or (playersCount > 0 and readyCount / playersCount >= 0.8) then
-        if isTimer(self.m_LobbyTimer) then
-            killTimer(self.m_LobbyTimer)
-        end
+    -- Wait indefinitely for a single player
+    if playersCount == 1 and readyCount == 0 then return end
+
+    -- Start early if 80 % or more are ready
+    if playersCount > 0 and readyCount / playersCount >= 0.8 then
+        delete(self.m_LobbyPulse)
         self:_startGlobalCountdown()
     end
 end
@@ -239,7 +236,7 @@ function TimeTrial:_startGlobalCountdown()
     -- Wait for the sound intro, then start the map and trigger client countdowns
     self.m_CountdownTimer = setTimer(function()
         for player in pairs(self.m_Players) do
-            if player:isAlive() then player:triggerEvent("ttAttemptStart") end
+            if player:isReady() then player:triggerEvent("ttAttemptStart") end
         end
 
         self.m_CountdownDoneTimer = setTimer(function()

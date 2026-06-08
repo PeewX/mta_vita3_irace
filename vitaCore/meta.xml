@@ -9,6 +9,7 @@
     <script src="shared/classes/Singleton.lua" type="shared" cache = "false"/>
     <script src="shared/classes/ConfigXML.lua" type="shared" cache = "false"/>
     <script src="shared/classes/Package.lua" type="shared" cache = "false"/>
+    <script src="shared/classes/TimedPulse.lua" type="shared" cache = "false"/>
 
     <script src="shared/utils.lua" type = "shared" cache = "false"/>
     <script src="shared/async.lua" type="shared" cache = "false"/>
