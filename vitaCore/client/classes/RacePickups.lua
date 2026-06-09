@@ -93,9 +93,9 @@ function RacePickup:changeVehicle(hitElement)
     triggerServerEvent('syncVehicleModel', localPlayer, self.m_VehicleId)
 end
 
-function RacePickup.getAll()
-    return RacePickups
-end
+function RacePickup:getId() return self.m_Id end
+function RacePickup:getObject() return self.m_Object end
+function RacePickup.getAll() return RacePickups end
 
 function RacePickup.rotate()
     local angle = math.fmod((getTickCount() - g_PickupStartTick) * 360 / 2000, 360)

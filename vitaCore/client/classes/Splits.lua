@@ -31,10 +31,18 @@ function Splits:initSplits(globalBest, personalBest)
     self.m_GlobalBest = table.setIndexToInteger(globalBest)
     self.m_PersonalBest = table.setIndexToInteger(personalBest)
 
-    outputDebugString("Received Global: ")
-    iprint(self.m_GlobalBest)
-    outputDebugString("Received PB: ")
-    iprint(self.m_PersonalBest)
+    if self.m_GlobalBest then self:createMarker() end
+end
+
+function Splits:createMarker()
+    for pickup in pairs(RacePickup.getAll()) do
+        if self.m_GlobalBest[pickup:getId()] then
+            local object = pickup:getObject()
+            local marker = Marker(object.position + Vector3(0, 0, 1.3), "arrow", .3, 170, 10, 210)
+            marker:setDimension(localPlayer.dimension)
+            marker:setParent(object)
+        end
+    end
 end
 
 function Splits:reset()
