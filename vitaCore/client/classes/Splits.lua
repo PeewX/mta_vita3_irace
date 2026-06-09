@@ -23,10 +23,8 @@ function Splits:constructor()
     self.m_PersonalBest = {}
     self.m_GlobalBest = {}
 
-    --self.m_renderTarget = DxRenderTarget(Timings.WIDTH, Timings.HEIGHT)
-
     addEventHandler("initSplits", localPlayer, bind(self.initSplits, self))
-    --addEventHandler("onClientRender", root, bind(self.render, self))
+    addEventHandler("onClientRender", root, bind(self.render, self))
 end
 
 function Splits:initSplits(globalBest, personalBest)
@@ -84,13 +82,21 @@ function Splits:finish()
 end
 
 function Splits:renderInfo(timeDiff, speedDiff, color)
-    local timeStr = ("%s%s%ss"):format(color.hex, (timeDiff < 0 and "-" or "+"), msToTimeStr(math.abs(timeDiff), false, true))
+    if self.m_LastUpdate and getTickCount() - self.m_LastUpdate < 2000 then return end
+    self.m_RenderString = ("%s%s%ss"):format(color.hex, (timeDiff < 0 and "-" or "+"), msToTimeStr(math.abs(timeDiff), false, true))
 
-    local speedStr = ""
     if speedDiff then
         local speedColor = speedDiff < 0 and Splits.COLOR.SPEED_SLOWER.hex or Splits.COLOR.SPEED_FASTER.hex
-        speedStr = (" %s(%s%.1f km/h)#FFFFFF"):format(speedColor, (speedDiff < 0 and "" or "+"), speedDiff)
+        self.m_RenderString = ("%s %s(%s%.1f km/h)"):format(self.m_RenderString, speedColor, (speedDiff < 0 and "" or "+"), speedDiff)
     end
 
-    outputChatBox((":Splits: %s%s"):format(timeStr, speedStr), 255, 255, 255, true)
+    --outputChatBox((":Splits: %s"):format(self.m_RenderString), 255, 255, 255, true)
+    self.m_LastUpdate = getTickCount()
+    playSound("files/audio/splits.mp3")
+end
+
+function Splits:render()
+    if self.m_LastUpdate and getTickCount() - self.m_LastUpdate < 5000 then
+        dxDrawText(self.m_RenderString, 0, screenHeight/5, screenWidth, screenHeight, tocolor(255, 255, 255), 2, "default-bold", "center", "top", false, false, false, true)
+    end
 end
