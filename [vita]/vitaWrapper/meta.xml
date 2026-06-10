@@ -7,4 +7,5 @@
 
     <export function="executeMapScript" type="client"/>
     <export function="stopMapScript" type="client"/>
+    <export function="resetRunEvents" type="client"/>
 </meta>

@@ -120,6 +120,13 @@ function MapManager:_loadMapElements()
     end
 end
 
+function MapManager:resetRun()
+    exports.vitaWrapper:resetRunEvents()
+    setGravity(0.008)
+    setGameSpeed(1)
+    setVehicleGravity(localPlayer.vehicle, 0, 0, -1)
+end
+
 function MapManager:unloadMap()
     if not self.m_MapLoaded then return end
 

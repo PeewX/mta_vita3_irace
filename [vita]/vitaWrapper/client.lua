@@ -4,13 +4,15 @@
 -- Date: 10.05.2026 - Time: 14:45
 -- pewx.de // iRace-mta.de // mtasa.de
 --
-local trackedElements = {}
-local trackedTimers   = {}
-local trackedHandlers = {}
-local trackedModels   = {}
-local trackedCOLs     = {}
-local trackedLODs     = {}
-local savedGlobals    = {}
+local trackedElements  = {}
+local trackedTimers    = {}
+local trackedEvents    = {}
+local trackedRunEvents = {}
+local trackedModels    = {}
+local trackedCOLs      = {}
+local trackedLODs      = {}
+local savedGlobals     = {}
+local scriptRunning    = false
 
 ----------------------------------------------------------------
 
@@ -145,14 +147,15 @@ local function restoreWrappers()
         if event == "onClientResourceStop"  then event = "onClientResourceStopScript"  end
         if event == "onClientPlayerSpawn"   then event = "onClientPlayerSpawnScript"   end
 
-        for _, v in pairs(trackedHandlers) do
+        for _, v in pairs(trackedEvents) do
             if v.event == event and v.fn == fn then
                 -- outputDebugString(("vitaWrapper: Duplicate event handler '%s'"):format(event))
                 return false
             end
         end
 
-        table.insert(trackedHandlers, {event = event, elem = elem, fn = fn})
+        if scriptRunning then table.insert(trackedRunEvents, {event = event, elem = elem, fn = fn}) end
+        table.insert(trackedEvents, {event = event, elem = elem, fn = fn})
         return _addEventHandler(event, elem, fn, propagated, priority)
     end
 
@@ -161,10 +164,16 @@ local function restoreWrappers()
         if event == "onClientResourceStart" then event = "onClientResourceStartScript" end
         if event == "onClientResourceStop"  then event = "onClientResourceStopScript"  end
         if event == "onClientPlayerSpawn"   then event = "onClientPlayerSpawnScript"   end
-        for i = #trackedHandlers, 1, -1 do
-            local v = trackedHandlers[i]
+        for i = #trackedEvents, 1, -1 do
+            local v = trackedEvents[i]
             if v.event == event and v.elem == elem and v.fn == fn then
-                table.remove(trackedHandlers, i)
+                table.remove(trackedEvents, i)
+            end
+        end
+        for i = #trackedRunEvents, 1, -1 do
+            local v = trackedRunEvents[i]
+            if v.event == event and v.elem == elem and v.fn == fn then
+                table.remove(trackedRunEvents, i)
             end
         end
         return _removeEventHandler(event, elem, fn)
@@ -276,6 +285,17 @@ function executeMapScript(scripts)
 
     triggerEvent("onClientResourceStartScript", resourceRoot)
     triggerEvent("onClientPlayerSpawnScript", localPlayer)
+
+    scriptRunning = true
+end
+
+function resetRunEvents()
+    if getResourceName(sourceResource) ~= "vitaCore" then return end
+
+    for i = #trackedRunEvents, 1, -1 do
+        local v = trackedRunEvents[i]
+        removeEventHandler(v.event, v.elem, v.fn)
+    end
 end
 
 function stopMapScript()
@@ -284,22 +304,24 @@ function stopMapScript()
 
     triggerEvent("onClientResourceStopScript", resourceRoot)
 
-    for _, h     in pairs(trackedHandlers) do _removeEventHandler(h.event, h.elem, h.fn) end
+    for _, h     in pairs(trackedEvents) do _removeEventHandler(h.event, h.elem, h.fn) end
     for _, timer in pairs(trackedTimers)   do if isTimer(timer.timer) then killTimer(timer.timer) end end
     for _, elem  in pairs(trackedElements) do if isElement(elem) then destroyElement(elem) end end
     for _, model in pairs(trackedModels)   do engineRestoreModel(model) engineRestoreCOL(model) end
     for _, model in pairs(trackedCOLs)     do engineRestoreCOL(model) end
     for _, model in pairs(trackedLODs)     do engineResetModelLODDistance(model) end
 
-
     for k in pairs(_G) do if not savedGlobals[k] then _G[k] = nil end end
 
-    trackedHandlers  = {}
+    trackedEvents    = {}
+    trackedRunEvents = {}
     trackedTimers    = {}
     trackedElements  = {}
     trackedModels    = {}
     trackedCOLs      = {}
     trackedLODs      = {}
+
+    scriptRunning = false
 end
 
 for k in pairs(_G) do savedGlobals[k] = true end

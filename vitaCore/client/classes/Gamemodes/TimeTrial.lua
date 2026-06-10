@@ -45,6 +45,7 @@ end
 
 function TimeTrial:onAttemptStart()
     self.m_Countdown:start()
+    MapManager:getSingleton():resetRun()
 end
 
 function TimeTrial:onCountdownFinished()
