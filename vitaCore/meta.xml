@@ -118,6 +118,7 @@
     <script src = "client/classes/RaceTimer.lua" type = "client" cache = "false"/>
     <script src = "client/classes/Splits.lua" type = "client" cache = "false"/>
     <script src = "client/classes/MovementRecorder.lua" type = "client" cache = "false"/>
+    <script src = "client/classes/Color.lua" type = "client" cache = "false"/>
     <script src = "client/classes/UI/Countdown.lua" type = "client" cache = "false"/>
     <script src = "client/classes/UI/TimerWidget.lua" type = "client" cache = "false"/>
     <script src = "client/constants/Main.lua" type = "client" cache = "false"/>
