@@ -19,7 +19,6 @@ function Map:constructor(gamemode, resourceName)
     self.m_Gamemode.m_Element:setData("mapname",      self.m_Map.m_Name)
     self.m_Gamemode.m_Element:setData("nextmap",      "random")
     self.m_Gamemode.m_Element:setData("nextmapname",  "")
-    self.m_Gamemode.m_Element:setData("duration",     MAP_DURATION)
 
     self.m_Has_Ended    = false   -- true once the 10-min timer fires; grace period active
     self.m_MapTimer     = false
@@ -28,8 +27,8 @@ function Map:constructor(gamemode, resourceName)
     -- Per-player tracking
     self.m_PlayerSpawns      = {}  -- [player] = spawnIndex
     self.m_PlayerActive      = {}  -- [player] = true while a player is in an active attempt
-    self.m_PlayerDoneAfterEnd = {} -- [player] = true once their last attempt ended (grace period)
 
+    self.m_OnMapPreEndCallback = bind(gamemode._onMapPreEnd, gamemode)
     self.m_OnEndCallback = bind(gamemode._onMapEnd, gamemode)
     self.m_DatabaseMap = DatabaseMap:new(self.m_ResourceName)
     self.m_TimesPlayed = self.m_DatabaseMap.m_Timesplayed
@@ -82,20 +81,14 @@ function Map:_onTimerExpired()
     self.m_MapTimer  = false
     -- Give active players up to GRACE_DURATION to finish their current attempt.
     self.m_GraceTimer = setTimer(self.m_OnEndCallback, GRACE_DURATION, 1)
-    self:_checkGraceEnd()
+    return self:anyActivePlayer() and self.m_OnMapPreEndCallback() or self:_checkGraceEnd()
 end
 
--- Cancel the grace timer and call the end callback early if no player is
--- still in an active attempt.
+-- Cancel the grace timer and call the end callback if there is no active attempt
 function Map:_checkGraceEnd()
     if not self.m_Has_Ended then return end
-    for _, active in pairs(self.m_PlayerActive) do
-        if active then return end
-    end
-    if self.m_GraceTimer and isTimer(self.m_GraceTimer) then
-        killTimer(self.m_GraceTimer)
-        self.m_GraceTimer = false
-    end
+    if self:anyActivePlayer() then return end
+    if self.m_GraceTimer and isTimer(self.m_GraceTimer) then killTimer(self.m_GraceTimer) end
     self.m_OnEndCallback()
 end
 
@@ -103,7 +96,7 @@ function Map:getDuration()
     return MAP_DURATION
 end
 
-function Map:getTimerLeft()
+function Map:getTimeLeft()
     if not self.m_MapTimer or not isTimer(self.m_MapTimer) then return 0 end
     local timeLeft = getTimerDetails(self.m_MapTimer)
     return timeLeft or 0
@@ -161,19 +154,22 @@ end
 -- If the grace period is active and this was the last active player, ends the map early.
 function Map:onAttemptEnd(player)
     self.m_PlayerActive[player] = false
-    if self.m_Has_Ended then
-        self.m_PlayerDoneAfterEnd[player] = true
-        self:_checkGraceEnd()
-    end
+    if self.m_Has_Ended then self:_checkGraceEnd() end
 end
 
 function Map:isAttempt(player)
     return self.m_PlayerActive[player]
 end
 
--- Returns false during the grace period if the player already ended their last attempt.
-function Map:canRespawn(player)
-    return not (self.m_Has_Ended and self.m_PlayerDoneAfterEnd[player])
+-- Returns false during the grace period
+function Map:canRespawn()
+    return not self.m_Has_Ended
+end
+
+function Map:anyActivePlayer()
+    for _, active in pairs(self.m_PlayerActive) do
+        if active then return true end
+    end
 end
 
 -- ==================== TOPTIMES ====================
@@ -221,9 +217,6 @@ end
 function Map:removePlayer(player)
     self:releaseSpawn(player)
     self.m_PlayerActive[player]       = nil
-    self.m_PlayerDoneAfterEnd[player] = nil
     -- If in grace period, check if we can end early now
-    if self.m_Has_Ended then
-        self:_checkGraceEnd()
-    end
+    if self.m_Has_Ended then self:_checkGraceEnd() end
 end

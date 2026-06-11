@@ -129,7 +129,6 @@ function TimeTrial:onPlayerWasted()
     if not self.m_Players[source] then return end
     if not self.m_Is_Running then return end
     if not self.m_CurrentMap:isAttempt(source) then return end
-    if isElement(source.raceVehicle) then source.raceVehicle:destroy() end
     self:_respawnPlayer(source)
 end
 
@@ -137,7 +136,6 @@ function TimeTrial:onRespawnKey(player)
     if not self.m_Players[player] then return end
     if not self.m_Is_Running then return end
     if not self.m_CurrentMap then return end
-    if not self.m_CurrentMap:canRespawn(player) then return end
     self:_respawnPlayer(player)
 end
 
@@ -243,7 +241,7 @@ function TimeTrial:_startGlobalCountdown()
             self.m_Is_Running = true
             self.m_CurrentMap:startTimer()
 
-            local timeLeft = self.m_CurrentMap:getTimerLeft()
+            local timeLeft = self.m_CurrentMap:getTimeLeft()
             for player in pairs(self.m_Players) do
                 if player:isAlive() then player:triggerEvent("ttUpdateMapTime", duration, timeLeft) end
             end
@@ -364,7 +362,7 @@ function TimeTrial:onDownloadFinished()
 
     -- Late join during a running map
     local duration = self.m_CurrentMap:getDuration()
-    local timeLeft = self.m_CurrentMap:getTimerLeft()
+    local timeLeft = self.m_CurrentMap:getTimeLeft()
     client:triggerEvent("ttMapStarted", duration, timeLeft)
 
     -- Make sure spawn is assigned and vehicle exists
@@ -378,17 +376,16 @@ end
 -- ==================== RESPAWN ====================
 
 function TimeTrial:_respawnPlayer(player)
+    if not self.m_CurrentMap then return end
     if player.m_respawnCountdown then return end
     player.m_respawnCountdown = true
-    if self.m_CurrentMap then
-        self.m_CurrentMap:onAttemptEnd(player)
-    end
 
     player:triggerEvent("ttAttemptFinished")
+    self.m_CurrentMap:onAttemptEnd(player)
 
     if isElement(player.raceVehicle) then player.raceVehicle:destroy() end
+    if not self.m_CurrentMap:canRespawn() then return end
 
-    if not self.m_CurrentMap then return end
     local spawn = self.m_CurrentMap:getPlayerSpawn(player)
     if not spawn then return end
 
@@ -434,12 +431,17 @@ function TimeTrial:onPlayerAttemptStarted()
 
     if not self.m_CurrentMap:isAttempt(client) then
         client.m_respawnCountdown = false
-        if not self.m_CurrentMap:canRespawn(client) then return end
+        if not self.m_CurrentMap:canRespawn() then return end
         self.m_CurrentMap:onAttemptStart(client)
     end
 end
 
 -- ==================== MAP END ====================
+
+function TimeTrial:_onMapPreEnd()
+    if not self.m_Is_Running then return end
+    outputChatBoxToGamemode("Respawn disabled, last chance to finish the map..", self.m_GamemodeId, 255, 255, 255, true)
+end
 
 -- Called by Map when the timer + grace period have both elapsed.
 function TimeTrial:_onMapEnd()
