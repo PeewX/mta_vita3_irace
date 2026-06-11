@@ -45,7 +45,6 @@ end
 
 function TimeTrial:onAttemptStart()
     self.m_Countdown:start()
-    MapManager:getSingleton():resetRun()
 end
 
 function TimeTrial:onCountdownFinished()
@@ -66,6 +65,8 @@ function TimeTrial:onAttemptFinished()
 
     self.m_GhostRecord:stopRecording()
     self.m_GhostPlayback:stopPlayback()
+
+    MapManager:getSingleton():resetRun()
 
     if self.m_ReceivedGhost then return end
     local checkpointCount = table.size(Splits:getSingleton():getRecord())
