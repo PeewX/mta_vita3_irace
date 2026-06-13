@@ -20,8 +20,10 @@ function DatabaseMap:constructor(sMapname)
     end
 end
 
-function DatabaseMap:destructor()
-    --sql:queryExec("UPDATE ??_maps SET toptimes = ?, timings = ?, ratings = ?, timesplayed = ? WHERE ID = ?", sql:getPrefix(), toJSON(self.m_Toptimes), toJSON(self.m_Timings), toJSON(self.m_Ratings), self.m_Timesplayed, self.m_MapID)
+function DatabaseMap:destructor(timePlayed)
+    timePlayed = timePlayed or 0
+    sql:queryExec("UPDATE ??_maps SET ratings = ?, timesplayed = timesplayed + 1, timeplayed = timeplayed + ? WHERE ID = ?",
+        sql:getPrefix(), toJSON(self.m_Ratings), timePlayed, self.m_MapID)
 end
 
 function DatabaseMap:loadToptimes()
@@ -126,7 +128,7 @@ function DatabaseMap:getSplitsFromPlayer(player)
     local result = sql:queryFetchSingle("SELECT Splits FROM ??_map_records WHERE MapId = ? AND PlayerId = ?",
         sql:getPrefix(), self.m_MapID, player:getID())
 
-    return result and fromJSON(result.Splits) or {}
+    return (result and result.Splits) and fromJSON(result.Splits) or {}
 end
 
 function DatabaseMap:getGhostFromPlayer(player)

@@ -23,6 +23,7 @@ function Map:constructor(gamemode, resourceName)
     self.m_Has_Ended    = false   -- true once the 10-min timer fires; grace period active
     self.m_MapTimer     = false
     self.m_GraceTimer   = false
+    self.m_StartTime    = 0
 
     -- Per-player tracking
     self.m_PlayerSpawns      = {}  -- [player] = spawnIndex
@@ -39,15 +40,11 @@ function Map:destructor()
     if self.m_GraceTimer and isTimer(self.m_GraceTimer) then killTimer(self.m_GraceTimer) end
 
     if self.m_DatabaseMap then
-        self.m_DatabaseMap.m_Timesplayed = self.m_DatabaseMap.m_Timesplayed + 1
-        delete(self.m_DatabaseMap)
-        self.m_DatabaseMap = nil
+        local timePlayed = getRealTime().timestamp - self.m_StartTime
+        delete(self.m_DatabaseMap, timePlayed)
     end
 
-    if self.m_Map then
-        delete(self.m_Map)
-        self.m_Map = nil
-    end
+    if self.m_Map then delete(self.m_Map) end
 
     self.m_Gamemode.m_Element:setData("map",      "none")
     self.m_Gamemode.m_Element:setData("mapname",  "loading...")
@@ -73,6 +70,7 @@ end
 -- Returns the duration in ms so the caller can persist it on the element.
 function Map:startTimer()
     self.m_MapTimer   = setTimer(bind(self._onTimerExpired, self), MAP_DURATION, 1)
+    self.m_StartTime  = getRealTime().timestamp
     return MAP_DURATION
 end
 
